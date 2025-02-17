@@ -1,3 +1,4 @@
+#![feature(isqrt)]
 // TODO:
 // - Specialization for instances with a single part.
 // - Use trace instead of eprintln.
