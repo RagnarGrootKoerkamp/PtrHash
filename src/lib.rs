@@ -60,6 +60,7 @@ mod test;
 use bitvec::{bitvec, vec::BitVec};
 use bucket_fn::BucketFn;
 pub use bucket_fn::CubicEps;
+pub use bucket_fn::SquareEps;
 pub use bucket_fn::Linear;
 pub use cacheline_ef::CachelineEfVec;
 use itertools::izip;
@@ -112,6 +113,22 @@ impl PtrHashParams<Linear> {
             alpha: 0.99,
             lambda: 3.0,
             bucket_fn: Linear,
+            slots_per_part: None,
+            // By default, limit to 2^32 keys per shard, whose hashes take 8B*2^31=16GB.
+            keys_per_shard: 1 << 31,
+            sharding: Sharding::None,
+            print_stats: false,
+        }
+    }
+}
+
+impl PtrHashParams<SquareEps> {
+    pub fn default_square() -> Self {
+        Self {
+            remap: true,
+            alpha: 0.99,
+            lambda: 3.5,
+            bucket_fn: SquareEps,
             slots_per_part: None,
             // By default, limit to 2^32 keys per shard, whose hashes take 8B*2^31=16GB.
             keys_per_shard: 1 << 31,
