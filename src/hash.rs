@@ -50,10 +50,12 @@ fn to_bytes<Key: ?Sized>(x: &Key) -> &[u8] {
 
 // A. u64-only hashers
 /// Multiply the key by a mixing constant.
+#[cfg_attr(feature = "epserde", derive(epserde::prelude::Epserde))]
 #[derive(Clone)]
 pub struct MulHash;
 /// Pass the key through unchanged.
 /// Used for benchmarking.
+#[cfg_attr(feature = "epserde", derive(epserde::prelude::Epserde))]
 #[derive(Clone)]
 pub struct NoHash;
 
