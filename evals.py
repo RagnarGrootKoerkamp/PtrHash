@@ -263,10 +263,17 @@ def space(f, out):
         0.98: 2.6,
     }
 
+    alpha_style = {
+        0.998: "solid",
+        0.995: "dotted",
+        0.99: "dashed",
+        0.98: "solid",
+    }
+
     groups = df.groupby(["n", "alpha", "bucketfn", "real_alpha"])
     for k, g in groups:
         n, alpha, bucketfn, real_alpha = k
-        ls = "solid"
+        ls = alpha_style[alpha]
         lw = alpha_size[alpha]
         a = 0.8
         if bucketfn == "Linear":
@@ -281,10 +288,12 @@ def space(f, out):
     # Plot space with remap
     for alpha in df.alpha.unique():
         lw = alpha_size[alpha]
+        lst = alpha_style[alpha]
         ax2.plot(
             ls,
             [8 / l + 32 * (1 / alpha - 1) for l in ls],
             lw=lw,
+            ls=lst,
             color="green",
             alpha=0.9,
         )
@@ -293,6 +302,7 @@ def space(f, out):
                 ls,
                 [8 / l + (512 / 44) * (1 / alpha - 1) for l in ls],
                 lw=lw,
+                ls=lst,
                 color="orange",
                 alpha=0.9,
             )
@@ -345,7 +355,8 @@ def space(f, out):
     la = []
     for a in sorted(df.alpha.unique(), reverse=True):
         lw = alpha_size[a]
-        l = Line2D([0], [0], label=f"$\\alpha = {a}$", lw=lw, color="black")
+        ls = alpha_style[a]
+        l = Line2D([0], [0], label=f"$\\alpha = {a}$", lw=lw, ls=ls, color="black")
         la.append(l)
     plt.legend(
         handles=[llinear, lcubic, lfill, lpilots, lvec, lclef] + la,
@@ -731,13 +742,13 @@ def comparison(f):
 plt.close("all")
 
 # 3.4
-bucket_fn_plots()
+# bucket_fn_plots()
 
 # 4.1.1
 # build_stats()
 
 # 4.1.2
-# space("data/size.json", "plots/size.svg")
+space("data/size.json", "plots/size.svg")
 
 # 4.1.2
 # remap("data/remap.json")
