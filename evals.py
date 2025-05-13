@@ -765,3 +765,4 @@ space("data/size.json", "plots/size.svg")
 
 # 4.3
 # comparison("data/comparison_3e8.txt")
+# comparison("data/comparison_3e8_gx.txt")
