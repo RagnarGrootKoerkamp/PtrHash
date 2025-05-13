@@ -103,7 +103,6 @@ use fastmod::FM32;
 use itertools::izip;
 use itertools::Itertools;
 use log::trace;
-use log::warn;
 use mem_dbg::MemSize;
 use pack::MutPacked;
 use rand::{Rng, SeedableRng};
@@ -479,11 +478,11 @@ impl<Key: KeyT, BF: BucketFn, F: MutPacked, Hx: KeyHasher<Key>> PtrHash<Key, BF,
         let stats = 's: loop {
             tries += 1;
             if tries > MAX_TRIES {
-                warn!("PtrHash failed to find a global seed after {MAX_TRIES} tries.");
+                log::error!("PtrHash failed to find a global seed after {MAX_TRIES} tries.");
                 return None;
             }
             if tries > 1 {
-                trace!("NEW TRY Try {tries} for global seed.");
+                log::warn!("NEW TRY Try {tries} for global seed.");
             }
 
             // Choose a global seed s.
