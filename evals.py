@@ -166,6 +166,7 @@ def build_stats():
         ax1.set_ylim(0, 1.0)
         ax3.set_ylim(0, 1)
         ax2.set_ylim(0, 20)
+        ax2.set_yticks([0, 4, 8, 12, 16, 20], minor=False)
 
         ax1.set_title(name.capitalize() + f", $\\lambda = {l}$")
 
