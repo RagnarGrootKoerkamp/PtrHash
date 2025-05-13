@@ -23,6 +23,7 @@ use serde::Serialize;
 /// 2. construction speed, datastructure size, and query throughput for various parameters
 /// 3. remap types
 fn main() {
+    env_logger::init();
     // bucket_fn_stats(); // <10min
 
     // size(); // many hours
@@ -37,6 +38,8 @@ fn main() {
     // query_throughput(); // 22min
 
     string_queries(); // 30min
+
+    // construction_memory(); // fast
 }
 
 #[allow(unused)]
@@ -49,6 +52,7 @@ fn all() {
     query_batching(); // 40min
     query_throughput(); // 12min
     string_queries();
+    construction_memory();
 }
 
 const SMALL_N: usize = 20_000_000;
@@ -245,6 +249,20 @@ fn size() {
         }
     }
     write(&results, &format!("data/size.json"));
+}
+
+/// Construction memory for compact params.
+fn construction_memory() {
+    let n = 1_000_000_000;
+    let keys = &generate_keys(n);
+
+    type MyPtrHash = PtrHash<u64, CubicEps, CachelineEfVec, IntHash, Vec<u8>>;
+
+    let params = PARAMS_COMPACT;
+    // Construct on 6 threads.
+    let (ph, _c6) = time(|| <MyPtrHash>::try_new(&keys, params));
+    let ph = ph.unwrap();
+    black_box(ph);
 }
 
 /// Collect stats on size and query speed, varying alpha and lambda.
