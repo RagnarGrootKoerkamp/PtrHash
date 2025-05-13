@@ -5,7 +5,7 @@ use std::{cmp::min, collections::HashMap, hint::black_box, time::Instant};
 use cacheline_ef::CachelineEfVec;
 use ptr_hash::{
     bucket_fn::{BucketFn, CubicEps, Linear, Optimal, Skewed, Square},
-    hash::{FxHash, Hasher, Xx128, Xx64},
+    hash::{FxHash, Gx, Hasher, Xx128},
     pack::{EliasFano, MutPacked},
     stats::BucketStats,
     util::{generate_keys, generate_string_keys},
@@ -20,7 +20,7 @@ use serde::Serialize;
 /// 2. construction speed, datastructure size, and query throughput for various parameters
 /// 3. remap types
 fn main() {
-    // bucket_fn_stats(); // <10min
+    bucket_fn_stats(); // <10min
 
     // size(); // many hours
 
@@ -372,7 +372,7 @@ fn sharding(sharding: Sharding, path: &str) {
     let keys = range.into_par_iter();
     let start = Instant::now();
     let bucket_fn = CubicEps;
-    let ptr_hash = PtrHash::<_, _, CachelineEfVec, Xx64>::new_from_par_iter(
+    let ptr_hash = PtrHash::<_, _, CachelineEfVec, Gx>::new_from_par_iter(
         n,
         keys,
         PtrHashParams {
@@ -786,7 +786,7 @@ fn string_queries() {
             let keys: Vec<u64> = generate_keys(n);
 
             test::<R, _, FxHash>(&keys, PARAMS_FAST, &mut results);
-            test::<R, _, Xx64>(&keys, PARAMS_FAST, &mut results);
+            test::<R, _, Gx>(&keys, PARAMS_FAST, &mut results);
             test::<R, _, Xx128>(&keys, PARAMS_FAST, &mut results);
         }
 
@@ -795,7 +795,7 @@ fn string_queries() {
             let keys: Vec<Box<u64>> = generate_keys(n).into_iter().map(|k| Box::new(k)).collect();
 
             test::<R, _, FxHash>(&keys, PARAMS_FAST, &mut results);
-            test::<R, _, Xx64>(&keys, PARAMS_FAST, &mut results);
+            test::<R, _, Gx>(&keys, PARAMS_FAST, &mut results);
             test::<R, _, Xx128>(&keys, PARAMS_FAST, &mut results);
         }
 
@@ -817,7 +817,7 @@ fn string_queries() {
             eprintln!("Keys size: {}", std::mem::size_of_val(keys.as_slice()));
 
             test::<R, _, FxHash>(&keys, PARAMS_FAST, &mut results);
-            test::<R, _, Xx64>(&keys, PARAMS_FAST, &mut results);
+            test::<R, _, Gx>(&keys, PARAMS_FAST, &mut results);
             test::<R, _, Xx128>(&keys, PARAMS_FAST, &mut results);
         }
 
@@ -839,7 +839,7 @@ fn string_queries() {
             eprintln!("Keys size: {}", std::mem::size_of_val(keys.as_slice()));
 
             test::<R, _, FxHash>(&keys, PARAMS_FAST, &mut results);
-            test::<R, _, Xx64>(&keys, PARAMS_FAST, &mut results);
+            test::<R, _, Gx>(&keys, PARAMS_FAST, &mut results);
             test::<R, _, Xx128>(&keys, PARAMS_FAST, &mut results);
         }
 
@@ -862,7 +862,7 @@ fn string_queries() {
             eprintln!("Keys size: {}", std::mem::size_of_val(keys.as_slice()));
 
             test::<R, _, FxHash>(&keys, PARAMS_FAST, &mut results);
-            test::<R, _, Xx64>(&keys, PARAMS_FAST, &mut results);
+            test::<R, _, Gx>(&keys, PARAMS_FAST, &mut results);
             test::<R, _, Xx128>(&keys, PARAMS_FAST, &mut results);
         }
 
@@ -871,7 +871,7 @@ fn string_queries() {
             let keys: Vec<Vec<u8>> = generate_string_keys(n);
 
             test::<R, _, FxHash>(&keys, PARAMS_FAST, &mut results);
-            test::<R, _, Xx64>(&keys, PARAMS_FAST, &mut results);
+            test::<R, _, Gx>(&keys, PARAMS_FAST, &mut results);
             test::<R, _, Xx128>(&keys, PARAMS_FAST, &mut results);
         }
     }

@@ -1,0 +1,198 @@
+
+Contender: PtrHash
+Generating inputGenerating input: 0%Generating input: 20%Generating input: 40%Generating input: 60%Generating input: 80%Input generation complete.
+Converting input
+Sending to Rust
+N: 300000000 len 300000000
+Cooldown
+Constructing
+#shards: 1
+keys/shard: 300000000
+Using slots per part: 524288, expected keys 519031, expected max keys: 521600 (3.5663914167327113 σ)
+Pilots: 85MB
+Taken: 37MB
+collect hash:          1.14s
+┌ radix sort:          1.70s
+├ check dups:          0.12s
+exp key/part:     519031 stddev        720
+exp max k/pt:     521191              2160     3.00
+    max k/pt:     521347              2316     3.22
+    slots/pt:     524288              5257     7.30
+exp    alpha:         99.00%
+max    alpha:         99.44%
+├part starts:          0.00s
+sort buckets:          1.82s
+ find pilots:          7.16s
+Remap len: 3038464
+Remap size: 4MB = 4419584B
+  remap free:          0.14s
+ total build:         10.37s
+Preparing query plan
+Cooldown
+Querying
+RESULT name=PtrHash params=default bitsPerElement=2.40364 constructionTimeMilliseconds=10366 queryTimeMilliseconds=3666 numQueries=100000000 numQueriesTotal=100000000 N=300000000 loadFactor=1 threads=6 queryThreads=1
+
+Contender: PtrHash-streaming
+Generating inputGenerating input: 0%Generating input: 20%Generating input: 40%Generating input: 60%Generating input: 80%Input generation complete.
+Converting input
+Sending to Rust
+N: 300000000 len 300000000
+Cooldown
+Constructing
+#shards: 1
+keys/shard: 300000000
+Using slots per part: 524288, expected keys 519031, expected max keys: 521600 (3.5663914167327113 σ)
+Pilots: 85MB
+Taken: 37MB
+collect hash:          0.99s
+┌ radix sort:          1.53s
+├ check dups:          0.11s
+exp key/part:     519031 stddev        720
+exp max k/pt:     521191              2160     3.00
+    max k/pt:     521334              2303     3.20
+    slots/pt:     524288              5257     7.30
+exp    alpha:         99.00%
+max    alpha:         99.44%
+├part starts:          0.00s
+sort buckets:          1.64s
+ find pilots:          6.89s
+Remap len: 3038464
+Remap size: 4MB = 4419584B
+  remap free:          0.14s
+ total build:          9.69s
+Preparing query plan
+Cooldown
+Querying
+RESULT name=PtrHash-streaming params=default bitsPerElement=2.40364 constructionTimeMilliseconds=9687 queryTimeMilliseconds=2336 numQueries=100000000 numQueriesTotal=100000000 N=300000000 loadFactor=1 threads=6 queryThreads=1
+
+Contender: PtrHash
+Generating inputGenerating input: 0%Generating input: 20%Generating input: 40%Generating input: 60%Generating input: 80%Input generation complete.
+Converting input
+Sending to Rust
+N: 300000000 len 300000000
+Cooldown
+Constructing
+#shards: 1
+keys/shard: 300000000
+Using slots per part: 524288, expected keys 519031, expected max keys: 521600 (3.5663914167327113 σ)
+Pilots: 100MB
+Taken: 37MB
+collect hash:          0.99s
+┌ radix sort:          1.65s
+├ check dups:          0.11s
+exp key/part:     519031 stddev        720
+exp max k/pt:     521191              2160     3.00
+    max k/pt:     521248              2217     3.08
+    slots/pt:     524288              5257     7.30
+exp    alpha:         99.00%
+max    alpha:         99.42%
+├part starts:          0.00s
+sort buckets:          1.77s
+ find pilots:          5.11s
+Remap len: 3038464
+Remap size: 12MB = 12153856B
+  remap free:          0.33s
+ total build:          8.22s
+Preparing query plan
+Cooldown
+Querying
+RESULT name=PtrHash params=fast bitsPerElement=2.99085 constructionTimeMilliseconds=8219 queryTimeMilliseconds=3282 numQueries=100000000 numQueriesTotal=100000000 N=300000000 loadFactor=1 threads=6 queryThreads=1
+
+Contender: PtrHash-streaming
+Generating inputGenerating input: 0%Generating input: 20%Generating input: 40%Generating input: 60%Generating input: 80%Input generation complete.
+Converting input
+Sending to Rust
+N: 300000000 len 300000000
+Cooldown
+Constructing
+#shards: 1
+keys/shard: 300000000
+Using slots per part: 524288, expected keys 519031, expected max keys: 521600 (3.5663914167327113 σ)
+Pilots: 100MB
+Taken: 37MB
+collect hash:          0.99s
+┌ radix sort:          1.59s
+├ check dups:          0.11s
+exp key/part:     519031 stddev        720
+exp max k/pt:     521191              2160     3.00
+    max k/pt:     521468              2437     3.38
+    slots/pt:     524288              5257     7.30
+exp    alpha:         99.00%
+max    alpha:         99.46%
+├part starts:          0.00s
+sort buckets:          1.70s
+ find pilots:          5.03s
+Remap len: 3038464
+Remap size: 12MB = 12153856B
+  remap free:          0.32s
+ total build:          8.07s
+Preparing query plan
+Cooldown
+Querying
+RESULT name=PtrHash-streaming params=fast bitsPerElement=2.99085 constructionTimeMilliseconds=8066 queryTimeMilliseconds=1602 numQueries=100000000 numQueriesTotal=100000000 N=300000000 loadFactor=1 threads=6 queryThreads=1
+
+Contender: PtrHash
+Generating inputGenerating input: 0%Generating input: 20%Generating input: 40%Generating input: 60%Generating input: 80%Input generation complete.
+Converting input
+Sending to Rust
+N: 300000000 len 300000000
+Cooldown
+Constructing
+#shards: 1
+keys/shard: 300000000
+Using slots per part: 524288, expected keys 519031, expected max keys: 521600 (3.5663914167327113 σ)
+Pilots: 75MB
+Taken: 37MB
+collect hash:          0.99s
+┌ radix sort:          1.65s
+├ check dups:          0.12s
+exp key/part:     519031 stddev        720
+exp max k/pt:     521191              2160     3.00
+    max k/pt:     521273              2242     3.11
+    slots/pt:     524288              5257     7.30
+exp    alpha:         99.00%
+max    alpha:         99.42%
+├part starts:          0.00s
+sort buckets:          1.77s
+ find pilots:         16.01s
+Remap len: 3038464
+Remap size: 4MB = 4419584B
+  remap free:          0.14s
+ total build:         18.93s
+Preparing query plan
+Cooldown
+Querying
+RESULT name=PtrHash params=compact bitsPerElement=2.11793 constructionTimeMilliseconds=18929 queryTimeMilliseconds=3541 numQueries=100000000 numQueriesTotal=100000000 N=300000000 loadFactor=1 threads=6 queryThreads=1
+
+Contender: PtrHash-streaming
+Generating inputGenerating input: 0%Generating input: 20%Generating input: 40%Generating input: 60%Generating input: 80%Input generation complete.
+Converting input
+Sending to Rust
+N: 300000000 len 300000000
+Cooldown
+Constructing
+#shards: 1
+keys/shard: 300000000
+Using slots per part: 524288, expected keys 519031, expected max keys: 521600 (3.5663914167327113 σ)
+Pilots: 75MB
+Taken: 37MB
+collect hash:          0.99s
+┌ radix sort:          1.58s
+├ check dups:          0.11s
+exp key/part:     519031 stddev        720
+exp max k/pt:     521191              2160     3.00
+    max k/pt:     521170              2139     2.97
+    slots/pt:     524288              5257     7.30
+exp    alpha:         99.00%
+max    alpha:         99.41%
+├part starts:          0.00s
+sort buckets:          1.70s
+ find pilots:         16.44s
+Remap len: 3038464
+Remap size: 4MB = 4419584B
+  remap free:          0.14s
+ total build:         19.29s
+Preparing query plan
+Cooldown
+Querying
+RESULT name=PtrHash-streaming params=compact bitsPerElement=2.11793 constructionTimeMilliseconds=19292 queryTimeMilliseconds=2348 numQueries=100000000 numQueriesTotal=100000000 N=300000000 loadFactor=1 threads=6 queryThreads=1

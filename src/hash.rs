@@ -65,9 +65,9 @@ pub struct NoHash;
 #[derive(Clone, MemSize)]
 pub struct FxHash;
 /// Default hash function for strings.
-#[cfg_attr(feature = "epserde", derive(epserde::prelude::Epserde))]
-#[derive(Clone, MemSize)]
-pub struct Xx64;
+// #[cfg_attr(feature = "epserde", derive(epserde::prelude::Epserde))]
+// #[derive(Clone, MemSize)]
+pub type Gx = gxhash::GxHasher;
 /// Fast good 128bit hash, when hashing >>10^9 keys.
 #[cfg_attr(feature = "epserde", derive(epserde::prelude::Epserde))]
 #[derive(Clone)]
@@ -161,54 +161,54 @@ impl<Key: KeyT> Hasher<Key> for FxHash {
 
 // XX64
 
-impl Hasher<u64> for Xx64 {
+impl Hasher<u64> for Gx {
     type H = u64;
     #[inline(always)]
     fn hash(x: &u64, seed: u64) -> u64 {
-        xxhash_rust::xxh3::xxh3_64_with_seed(to_bytes(x), seed)
+        todo!()
     }
 }
-impl Hasher<Box<u64>> for Xx64 {
+impl Hasher<Box<u64>> for Gx {
     type H = u64;
     #[inline(always)]
     fn hash(x: &Box<u64>, seed: u64) -> u64 {
         let x = **x;
-        xxhash_rust::xxh3::xxh3_64_with_seed(to_bytes(&x), seed)
+        todo!()
     }
 }
-impl Hasher<[u8]> for Xx64 {
+impl Hasher<[u8]> for Gx {
     type H = u64;
     #[inline(always)]
     fn hash(x: &[u8], seed: u64) -> u64 {
-        xxhash_rust::xxh3::xxh3_64_with_seed(to_bytes(x), seed)
+        gxhash::gxhash64(x, seed as i64)
     }
 }
-impl<const N: usize> Hasher<[u8; N]> for Xx64 {
+impl<const N: usize> Hasher<[u8; N]> for Gx {
     type H = u64;
     #[inline(always)]
     fn hash(x: &[u8; N], seed: u64) -> u64 {
-        xxhash_rust::xxh3::xxh3_64_with_seed(to_bytes(x), seed)
+        todo!()
     }
 }
-impl Hasher<&[u8]> for Xx64 {
+impl Hasher<&[u8]> for Gx {
     type H = u64;
     #[inline(always)]
     fn hash(x: &&[u8], seed: u64) -> u64 {
-        xxhash_rust::xxh3::xxh3_64_with_seed(to_bytes(*x), seed)
+        gxhash::gxhash64(x, seed as i64)
     }
 }
-impl<const N: usize> Hasher<&[u8; N]> for Xx64 {
+impl<const N: usize> Hasher<&[u8; N]> for Gx {
     type H = u64;
     #[inline(always)]
     fn hash(x: &&[u8; N], seed: u64) -> u64 {
-        xxhash_rust::xxh3::xxh3_64_with_seed(to_bytes(x), seed)
+        todo!()
     }
 }
-impl Hasher<Vec<u8>> for Xx64 {
+impl Hasher<Vec<u8>> for Gx {
     type H = u64;
     #[inline(always)]
     fn hash(x: &Vec<u8>, seed: u64) -> u64 {
-        xxhash_rust::xxh3::xxh3_64_with_seed(to_bytes(x.as_slice()), seed)
+        todo!()
     }
 }
 

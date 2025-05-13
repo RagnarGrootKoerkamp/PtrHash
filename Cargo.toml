@@ -42,7 +42,7 @@ fastrand = "2.0.1"
 serde = { version = "1.0.215", features = ["derive"] }
 mem_dbg = "0.3.0"
 
-cacheline-ef = { git = "https://github.com/ragnargrootkoerkamp/cacheline-ef" }
+cacheline-ef = {version="1.1.0", features=['epserde']}
 
 # Default included hash functions
 fxhash = "0.2.1"
@@ -56,6 +56,7 @@ metrohash =  {version="1.0.6", optional=true}
 murmur2 = {version="0.1.0", optional=true}
 murmur3 =  {version="0.5.2", optional=true}
 wyhash =  {version="0.5.0", optional=true}
+gxhash = "3.5.0"
 
 [features]
 epserde = ["dep:epserde", "dep:epserde-derive", "cacheline-ef/epserde"]

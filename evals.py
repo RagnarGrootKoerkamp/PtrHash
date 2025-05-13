@@ -731,7 +731,7 @@ def comparison(f):
 plt.close("all")
 
 # 3.4
-bucket_fn_plots()
+# bucket_fn_plots()
 
 # 4.1.1
 # build_stats()
@@ -753,3 +753,4 @@ bucket_fn_plots()
 
 # 4.3
 # comparison("data/comparison_3e8.txt")
+# comparison("data/comparison_3e8_gx.txt")
