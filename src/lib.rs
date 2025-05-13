@@ -404,8 +404,9 @@ impl<Key: KeyT, BF: BucketFn, F: MutPacked, Hx: KeyHasher<Key>> PtrHash<Key, BF,
             _ => n.div_ceil(params.keys_per_shard),
         };
 
-        // Formula of Vigna, eps-cost-sharding.
-        let eps = 1.0 - params.alpha;
+        // Formula of Vigna, eps-cost-sharding: https://arxiv.org/abs/2503.18397
+        // (1-alpha)/2, so that on average we still have some room to play with.
+        let eps = (1.0 - params.alpha) / 2.0;
         let x = n as f64 * eps * eps / 2.0;
         let target_parts = x / x.ln();
         let parts_per_shard = (target_parts.floor() as usize) / shards;
