@@ -1,3 +1,5 @@
+use std::hint::black_box;
+
 use super::*;
 use crate::util::generate_keys;
 
@@ -10,7 +12,8 @@ fn construct_random() {
     ]) {
         eprintln!("RANDOM Testing n = {}", n);
         let keys = generate_keys(n);
-        let ptr_hash = DefaultPtrHash::<IntHash, _, _>::new(&keys, PtrHashParams::default_fast());
+        let ptr_hash =
+            DefaultPtrHash::<RandomIntHash, _, _>::new(&keys, PtrHashParams::default_fast());
         let mut done = bitvec![0; n];
         for key in keys {
             let idx = ptr_hash.index(&key);
@@ -18,6 +21,38 @@ fn construct_random() {
             done.set(idx, true);
         }
     }
+}
+
+#[ignore = "for benchmarking only"]
+#[test]
+fn int_hash_speed() {
+    let n = 10000000;
+    let keys = (0..n as u64).map(|i| hash::C * i).collect::<Vec<_>>();
+    let seed = black_box(132);
+
+    let start = std::time::Instant::now();
+    for k in &keys {
+        black_box(RandomIntHash::hash(k, seed));
+    }
+    eprintln!("Time {:?}", start.elapsed());
+
+    let start = std::time::Instant::now();
+    for k in &keys {
+        black_box(IntHash::hash(k, seed));
+    }
+    eprintln!("Time {:?}", start.elapsed());
+
+    let start = std::time::Instant::now();
+    for k in &keys {
+        black_box(GxInt::hash(k, seed));
+    }
+    eprintln!("Time {:?}", start.elapsed());
+
+    let start = std::time::Instant::now();
+    for k in &keys {
+        black_box(Xxh3Int::hash(k, seed));
+    }
+    eprintln!("Time {:?}", start.elapsed());
 }
 
 /// Keys are multiples of 1, 2^40, and 10^12

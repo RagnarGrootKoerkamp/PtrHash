@@ -57,6 +57,7 @@ murmur2 = {version="0.1.0", optional=true}
 murmur3 =  {version="0.5.2", optional=true}
 wyhash =  {version="0.5.0", optional=true}
 log = "0.4.27"
+gxhash = "3.5.0"
 
 [features]
 epserde = ["dep:epserde", "dep:epserde-derive", "cacheline-ef/epserde"]

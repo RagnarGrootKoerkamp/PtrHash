@@ -252,8 +252,8 @@ type PilotHash = u64;
 /// - `Key`: The type of keys to hash.
 /// - `BF`: The bucket function to use. Inferred from `PtrHashParams` when calling `PtrHash::new()`.
 /// - `F`: The packing to use for remapping free slots, default `CachelineEf`.
-/// - `Hx`: The hasher to use for keys, default `FxHash`, but consider
-///       `hash::Xx64` for strings, or `hash::Xx128` when the number of keys is very
+/// - `Hx`: The hasher to use for keys, default `FxHash` for integers, but consider
+///       `hash::StringHash` (using `gxhash`) for strings, or `hash::StringHash128` when the number of string keys is very
 ///       large.
 /// - `V`: The pilots type. Usually `Vec<u8>`, or `&[u8]` for Epserde.
 #[cfg_attr(feature = "epserde", derive(epserde::prelude::Epserde))]

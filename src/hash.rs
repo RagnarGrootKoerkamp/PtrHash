@@ -2,16 +2,24 @@
 //!
 //! ## Integer keys
 //!
-//! For hashing keys, prefer [`IntHash`].
-//! If input keys are sufficiently random, [`RandomIntHash`] is slightly faster, which is an alias for [`FxHash`].
-//! For truly random keys, one could even use [`NoHash`], but this is mostly just a baseline for benchmarks.
+//! We provide:
+//! - [`NoHash`]: does nothing -- only use on truly random keys.
+//! - [`RandomIntHash`] = [`FxHash`], which does a single wrapping multiplication and should be good enough most of the time.
+//! - [`IntHash`]: Use this when the input keys are very regular, eg `0..1000`. (But then why do you need an MPHF anyway?)
+//!                Does a `u128` multiplication, and xors the high and low word together, like xxh3. Then does one more multiplication. Not very scientific but 'it works'.
+//! - [`GxInt`]: GxHash, but with the type 'inlined' so that it optimized better.
+//! - [`Xxh3Int`]: Xxh3, but with the type 'inlined' so that it optimized better.
+//!
+//! In practice, prefer [`RandomIntHash`] if it's good enough.
+//! Otherwise, fall back to [`IntHash`].
+//! If that still fails (which probably shouldn't happen) fall back to one of the two remaining
 //!
 //! If [`IntHash`] lacks sufficient randomness, use [`Xxh3Int`] instead, which is considerably slower but much stronger.
 //!
 //! ## String keys
 //!
 //! For string keys, use [`StringHash`] for 64-bit hashes and [`StringHash128`] for 128-bit hashes.
-//! These are aliases for 64bit and 128bit versions of xxhash (XXH3), respectively.
+//! These are aliases for 64bit and 128bit versions of gxhash, respectively.
 //!
 //! Another option is to use [`FxHash`] instead.
 //!
@@ -20,8 +28,10 @@
 //! call specialized functions rather than going through the generic `Hasher`
 //! interface.
 //!
+use gxhash::GxBuildHasher;
+
 use crate::KeyT;
-use std::fmt::Debug;
+use std::{fmt::Debug, hash::Hasher};
 
 /// The [`KeyHasher`] trait returns a 64 or 128-bit `Hash`. From this, two `u64` values are extracted.
 ///
@@ -79,18 +89,21 @@ impl<Key: KeyT, H: core::hash::Hasher + Default + Clone + Sync> KeyHasher<Key> f
 /// A slightly faster but weaker hash for sufficiently random integers. Uses [`fxhash::FxHasher64`].
 pub type RandomIntHash = fxhash::FxHasher64;
 pub type FxHash = fxhash::FxHasher64;
-/// Use [`xxhash_rust::xxh3::Xxh3Default`] implementation of XXH3 for 64-bit string hashing.
-pub type StringHash = xxhash_rust::xxh3::Xxh3Default;
 /// Type alias for xxhash (XXH3) hasher.
 ///
 /// Prefer [`Xxh3Int`] for integers, which avoids some overhead of the default hasher.
 pub type Xxh3 = xxhash_rust::xxh3::Xxh3Default;
-/// Use [`xxhash_rust::xxh3::Xxh3Default`] implementation of XXH3 for 128-bit string hashing.
-pub type StringHash128 = Xxh3_128;
+pub type Gx = gxhash::GxHasher;
+
+/// Use gxhash for 64-bit string hashing.
+pub type StringHash = Gx;
+/// Use gxhash for 128-bit string hashing.
+pub type StringHash128 = Gx128;
 
 // Implementations
 
 /// 128-bit version of XXH3.
+#[cfg_attr(feature = "epserde", derive(epserde::prelude::Epserde))]
 #[derive(Clone)]
 pub struct Xxh3_128;
 impl<Key: KeyT> KeyHasher<Key> for Xxh3_128 {
@@ -103,10 +116,26 @@ impl<Key: KeyT> KeyHasher<Key> for Xxh3_128 {
     }
 }
 
-/// A sufficiently good hash for non-random integers.
+/// 128-bit version of XXH3.
+#[cfg_attr(feature = "epserde", derive(epserde::prelude::Epserde))]
+#[derive(Clone)]
+pub struct Gx128;
+impl<Key: KeyT> KeyHasher<Key> for Gx128 {
+    type H = u128;
+    #[inline(always)]
+    fn hash(x: &Key, seed: u64) -> u128 {
+        use std::hash::BuildHasher;
+        let mut hasher = GxBuildHasher::with_seed(seed as i64).build_hasher();
+        x.hash(&mut hasher);
+        hasher.finish_u128()
+    }
+}
+
+/// A sufficiently good hash for non-random integers. Inspired by Xxh3, with one extra multiplication:
+/// FIXME: IS THAT NEEDED?
 ///
 /// ```ignore
-/// let (hi, lo) = (value ^ seed).wrapping_mul(C);
+/// let (hi, lo) = (value ^ seed) as u128 * C as u128;
 /// return (hi ^ lo).wrapping_mul(C);
 /// ```
 #[cfg_attr(feature = "epserde", derive(epserde::prelude::Epserde))]
@@ -125,6 +154,11 @@ pub struct NoHash;
 #[cfg_attr(feature = "epserde", derive(epserde::prelude::Epserde))]
 #[derive(Clone)]
 pub struct Xxh3Int;
+
+/// Inlined version of Xxh3 for integer keys.
+#[cfg_attr(feature = "epserde", derive(epserde::prelude::Epserde))]
+#[derive(Clone)]
+pub struct GxInt;
 
 // Macro to implement hashes for all integer types.
 macro_rules! int_hashers {
@@ -154,6 +188,14 @@ macro_rules! int_hashers {
                 #[inline(always)]
                 fn hash(x: &$t, seed: u64) -> u64 {
                     xxhash_rust::xxh3::xxh3_64_with_seed(&(*x as u64).to_le_bytes(), seed)
+                }
+            }
+
+            impl KeyHasher<$t> for GxInt {
+                type H = u64;
+                #[inline(always)]
+                fn hash(x: &$t, seed: u64) -> u64 {
+                    gxhash::gxhash64(&(*x as u64).to_le_bytes(), seed as i64)
                 }
             }
         )*

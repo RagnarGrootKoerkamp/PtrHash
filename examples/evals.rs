@@ -5,7 +5,10 @@ use std::{cmp::min, collections::HashMap, hint::black_box, time::Instant};
 use cacheline_ef::CachelineEfVec;
 use ptr_hash::{
     bucket_fn::{BucketFn, CubicEps, Linear, Optimal, Skewed, Square},
-    hash::{IntHash, KeyHasher, NoHash, RandomIntHash, StringHash, StringHash128, Xxh3Int},
+    hash::{
+        Gx, Gx128, GxInt, IntHash, KeyHasher, NoHash, RandomIntHash, StringHash, StringHash128,
+        Xxh3, Xxh3Int, Xxh3_128,
+    },
     pack::{EliasFano, MutPacked},
     stats::BucketStats,
     util::{generate_keys, generate_string_keys},
@@ -331,7 +334,7 @@ fn remap() {
         r
     }
 
-    let n = LARGE_N;
+    let n = 1_000_000_000;
     let mut results = vec![];
     let keys = &generate_keys(n);
 
@@ -787,6 +790,8 @@ fn string_queries() {
             test::<R, _, Xxh3Int>(&keys, PARAMS_FAST, &mut results);
             test::<R, _, StringHash>(&keys, PARAMS_FAST, &mut results);
             test::<R, _, StringHash128>(&keys, PARAMS_FAST, &mut results);
+            test::<R, _, GxInt>(&keys, PARAMS_FAST, &mut results);
+            test::<R, _, Gx>(&keys, PARAMS_FAST, &mut results);
         }
 
         // BOXED INT
@@ -796,6 +801,7 @@ fn string_queries() {
             test::<R, _, RandomIntHash>(&keys, PARAMS_FAST, &mut results);
             test::<R, _, StringHash>(&keys, PARAMS_FAST, &mut results);
             test::<R, _, StringHash128>(&keys, PARAMS_FAST, &mut results);
+            test::<R, _, Gx>(&keys, PARAMS_FAST, &mut results);
         }
 
         // PACKED SHORT STRING
@@ -818,6 +824,7 @@ fn string_queries() {
             test::<R, _, RandomIntHash>(&keys, PARAMS_FAST, &mut results);
             test::<R, _, StringHash>(&keys, PARAMS_FAST, &mut results);
             test::<R, _, StringHash128>(&keys, PARAMS_FAST, &mut results);
+            test::<R, _, Gx>(&keys, PARAMS_FAST, &mut results);
         }
 
         // PACKED LONG STRING
@@ -840,6 +847,7 @@ fn string_queries() {
             test::<R, _, RandomIntHash>(&keys, PARAMS_FAST, &mut results);
             test::<R, _, StringHash>(&keys, PARAMS_FAST, &mut results);
             test::<R, _, StringHash128>(&keys, PARAMS_FAST, &mut results);
+            test::<R, _, Gx>(&keys, PARAMS_FAST, &mut results);
         }
 
         // PACKED RANDOM STRING
@@ -863,6 +871,7 @@ fn string_queries() {
             test::<R, _, RandomIntHash>(&keys, PARAMS_FAST, &mut results);
             test::<R, _, StringHash>(&keys, PARAMS_FAST, &mut results);
             test::<R, _, StringHash128>(&keys, PARAMS_FAST, &mut results);
+            test::<R, _, Gx>(&keys, PARAMS_FAST, &mut results);
         }
 
         // STRING
@@ -870,8 +879,10 @@ fn string_queries() {
             let keys: Vec<Vec<u8>> = generate_string_keys(n);
 
             test::<R, _, RandomIntHash>(&keys, PARAMS_FAST, &mut results);
-            test::<R, _, StringHash>(&keys, PARAMS_FAST, &mut results);
-            test::<R, _, StringHash128>(&keys, PARAMS_FAST, &mut results);
+            test::<R, _, Xxh3>(&keys, PARAMS_FAST, &mut results);
+            test::<R, _, Xxh3_128>(&keys, PARAMS_FAST, &mut results);
+            test::<R, _, Gx>(&keys, PARAMS_FAST, &mut results);
+            test::<R, _, Gx128>(&keys, PARAMS_FAST, &mut results);
         }
     }
     write(&results, "data/string_queries.json");
