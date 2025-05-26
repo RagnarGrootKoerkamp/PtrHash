@@ -396,7 +396,7 @@ impl<Key: KeyT, BF: BucketFn, F: MutPacked, Hx: KeyHasher<Key>> PtrHash<Key, BF,
 
     /// Only initialize the parameters; do not compute the pilots yet.
     fn init(n: usize, mut params: PtrHashParams<BF>) -> Self {
-        assert!(n < (1 << 40), "Number of keys must be less than 2^40.");
+        // assert!(n < (1 << 40), "Number of keys must be less than 2^40.");
 
         let shards = match params.sharding {
             Sharding::None => 1,
