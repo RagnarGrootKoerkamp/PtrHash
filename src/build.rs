@@ -1,6 +1,7 @@
 use super::*;
 use crate::{bucket_idx::BucketIdx, stats::BucketStats};
 use bitvec::{slice::BitSlice, vec::BitVec};
+use log::warn;
 use rayon::prelude::*;
 use std::{
     collections::BinaryHeap,
@@ -158,7 +159,7 @@ impl<Key: KeyT, BF: BucketFn, F: Packed, Hx: KeyHasher<Key>> PtrHash<Key, BF, F,
                     //     );
                     // }
                     if evictions >= 10 * self.slots {
-                        trace!(
+                        warn!(
                             "\
 Too many evictions. Aborting!
 When the current bucket has size >=2, try decreasing lambda to use fewer elements per buckets.

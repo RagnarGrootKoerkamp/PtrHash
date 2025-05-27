@@ -18,6 +18,9 @@
 //! ```rust
 //! use ptr_hash::{PtrHash, PtrHashParams};
 //!
+//! // Enable logging.
+//! env_logger::init();
+//!
 //! // Generate some random keys.
 //! let n = 1_000_000;
 //! let keys = ptr_hash::util::generate_keys(n);
@@ -481,12 +484,17 @@ impl<Key: KeyT, BF: BucketFn, F: MutPacked, Hx: KeyHasher<Key>> PtrHash<Key, BF,
                 log::error!("PtrHash failed to find a global seed after {MAX_TRIES} tries.");
                 return None;
             }
-            if tries > 1 {
-                log::warn!("NEW TRY Try {tries} for global seed.");
-            }
+
+            let old_seed = self.seed;
 
             // Choose a global seed s.
             self.seed = rng.random();
+            if tries == 1 {
+                log::info!("First seed tried: {}", self.seed);
+            } else {
+                log::warn!("Previous seed {old_seed} failed.");
+                log::warn!("Trying seed number {tries}: {}.", self.seed);
+            }
 
             // Reset output-memory.
             pilots.clear();
