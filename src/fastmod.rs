@@ -45,7 +45,7 @@ impl Reduce for FM32 {
         assert!(d <= u32::MAX as usize);
         Self {
             d: d as u64,
-            m: u64::MAX / d as u64 + 1,
+            m: (u64::MAX / d as u64).wrapping_add(1),
         }
     }
     fn reduce(self, h: u64) -> usize {
