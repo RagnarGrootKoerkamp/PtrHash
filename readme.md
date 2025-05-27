@@ -8,18 +8,21 @@ a list of `n` distinct keys into `{0,...,n-1}`.
 It is based on/inspired by [PTHash](https://github.com/jermp/pthash) (and much
 more than just a Rust rewrite).
 
-Read the preprint ([arXiv](https://arxiv.org/abs/2502.15539), [blog
-version](https://curiouscoding.nl/posts/ptrhash)) for details on the algorithm
+**Paper.** Read the preprint ([arXiv](https://arxiv.org/abs/2502.15539)) for details on the algorithm
 and benchmarks against other methods:
 
 *Ragnar Groot Koerkamp*. PtrHash: Minimal Perfect Hashing at RAM Throughput.
 arXiv (2025). [doi.org/10.48550/arXiv.2502.15539](https://doi.org/10.48550/arXiv.2502.15539)
 
-Source code for the paper evals can be found in
+**Evals.** Source code for the paper evals can be found in
 [examples/evals.rs](examples/evals.rs), and analysis is [evals.py](evals.py).
 Plots can be found [in the blog](https://github.com/RagnarGrootKoerkamp/research/blob/master/posts/ptrhash/).
+The paper evals were done on the `evals` branch (which is v1.0 with GxHash added
+for string hashing) and my [fork](https://github.com/ragnargrootkoerkamp/MPHF-Experiments) of [mphf-experiments](https://github.com/ByteHamster/MPHF-Experiments).
 
-## Contact
+For changes since then, see [CHANGELOG.md](./CHANGELOG.md).
+
+**Contact.**
 
 In case you run into any kind of issue or things are unclear,
 please make issues and/or PRs, or reach out on [twitter]((https://twitter.com/curious_coding))/[bsky](https://bsky.app/profile/curiouscoding.nl).
@@ -27,7 +30,7 @@ I'm more than happy to help out with integrating PtrHash.
 
 ## Performance
 
-PtrHash supports up to `2^40` keys. For default parameters, constructing a MPHF of `n=10^9` integer keys gives:
+PtrHash supports up to `2^40` keys (and probably more). For default parameters, constructing a MPHF of `n=10^9` integer keys gives:
 - Construction takes `30s` on my `i7-10750H` (`2.6GHz`) on 6 threads.
   - `6s` to sort hashes,
   - `23s` to find pilots.
