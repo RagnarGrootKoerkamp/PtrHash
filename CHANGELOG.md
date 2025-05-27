@@ -5,6 +5,9 @@
 - Use Sebastiano Vigna's formula of the [epsilon-cost-sharding
   paper](https://arxiv.org/abs/2503.18397) to determine the number of slots per part.
 - Clean up the default provided hashes; add GxHash for strings.
+- Make `default_fast` the actual `PtrHashParams::default()`, and rename the
+  previous 'default' from the paper to `default_balanced`.
+- Make `RandomIntHash` the default hash function.
 
 **Minor.**
 - Added tests

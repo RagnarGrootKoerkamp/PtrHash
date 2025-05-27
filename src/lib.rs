@@ -101,7 +101,6 @@ use bucket_fn::BucketFn;
 use bucket_fn::CubicEps;
 use bucket_fn::Linear;
 use bucket_fn::SquareEps;
-use cacheline_ef::CachelineEfVec;
 use fastmod::FM32;
 use itertools::izip;
 use itertools::Itertools;
@@ -144,17 +143,19 @@ pub struct PtrHashParams<BF> {
 
     /// Force using a single part, so that [`PtrHash::index_single_part()`] can be used.
     ///
-    /// This makes construction up to 5x slower, but can make queries up to 30% faster.
+    /// Useful when there are not so many (say <1M or <10M) keys)
+    /// This slows down construction (more for larger inputs), but can make queries up to 30% faster.
     pub single_part: bool,
 }
 
 impl PtrHashParams<Linear> {
-    /// Parameters for faster construction and querying, and for inputs <1M.
+    /// Parameters for fast construction and queries. Use these by default.
     ///
-    /// Takes `3.0` bits/key, and can be up to 2x faster to query than the default version.
+    /// Takes `3.0` bits/key, and can be up to 2x faster to query than the balanced or compact versions.
     /// - `alpha=0.99`
     /// - `lambda=3.0`
     /// - `bucket_fn=Linear`
+    ///
     pub fn default_fast() -> Self {
         Self {
             remap: true,
@@ -184,13 +185,14 @@ impl PtrHashParams<SquareEps> {
 }
 
 impl PtrHashParams<CubicEps> {
-    /// Default parameters for inputs >1M keys.
+    /// Balanced parameters, which saves some space for larger inputs.
+    /// This is the 'Default' from the paper.
     ///
     /// Takes `2.4` bits/key, and trades off space and speed.
     /// - `alpha=0.99`
     /// - `lambda=3.5`
     /// - `bucket_fn=CubicEps`
-    pub fn default() -> Self {
+    pub fn default_balanced() -> Self {
         Self {
             remap: true,
             alpha: 0.99,
@@ -222,9 +224,10 @@ impl PtrHashParams<CubicEps> {
     }
 }
 
-impl Default for PtrHashParams<CubicEps> {
+/// By default, use [`PtrHashParams::default_fast()`].
+impl Default for PtrHashParams<Linear> {
     fn default() -> Self {
-        Self::default()
+        Self::default_fast()
     }
 }
 
@@ -233,9 +236,9 @@ impl Default for PtrHashParams<CubicEps> {
 /// [`PtrHash`] has a large number of generics, partly to support epserde.
 /// [`DefaultPtrHash`] fills in most values.
 ///
-/// Use this as [`DefaultPtrHash::new()`] or `<DefaultPtrHash>::new()`.
-pub type DefaultPtrHash<Hx = hash::IntHash, Key = u64, BF = bucket_fn::CubicEps> =
-    PtrHash<Key, BF, CachelineEfVec, Hx, Vec<u8>>;
+/// Use this as [`DefaultPtrHash::new`] or `<DefaultPtrHash>::new`.
+pub type DefaultPtrHash<Hx = hash::RandomIntHash, Key = u64, BF = bucket_fn::Linear> =
+    PtrHash<Key, BF, Vec<u32>, Hx, Vec<u8>>;
 
 /// Trait that keys must satisfy.
 pub trait KeyT: Send + Sync + std::hash::Hash {}
@@ -262,9 +265,9 @@ type PilotHash = u64;
 #[derive(Clone, MemSize)]
 pub struct PtrHash<
     Key: KeyT + ?Sized = u64,
-    BF: BucketFn = bucket_fn::CubicEps,
-    F: Packed = CachelineEfVec,
-    Hx: KeyHasher<Key> = hash::IntHash,
+    BF: BucketFn = bucket_fn::Linear,
+    F: Packed = Vec<u32>,
+    Hx: KeyHasher<Key> = hash::RandomIntHash,
     V: AsRef<[u8]> = Vec<u8>,
 > {
     params: PtrHashParams<BF>,

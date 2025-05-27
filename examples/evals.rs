@@ -12,7 +12,7 @@ use ptr_hash::{
     pack::{EliasFano, MutPacked},
     stats::BucketStats,
     util::{generate_keys, generate_string_keys},
-    DefaultPtrHash, KeyT, PtrHash, PtrHashParams, Sharding,
+    KeyT, PtrHash, PtrHashParams, Sharding,
 };
 use rand::{rng, Rng, RngCore};
 use rayon::iter::IntoParallelIterator;
@@ -389,7 +389,8 @@ fn sharding(sharding: Sharding, path: &str) {
     let keys = range.into_par_iter();
     let start = Instant::now();
     let bucket_fn = CubicEps;
-    let ptr_hash = <DefaultPtrHash>::new_from_par_iter(
+    type MyPtrHash = PtrHash<u64, CubicEps, CachelineEfVec, IntHash, Vec<u8>>;
+    let ptr_hash = MyPtrHash::new_from_par_iter(
         n,
         keys,
         PtrHashParams {

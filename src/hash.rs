@@ -31,7 +31,7 @@
 use gxhash::GxBuildHasher;
 
 use crate::KeyT;
-use std::{fmt::Debug, hash::Hasher};
+use std::fmt::Debug;
 
 /// The [`KeyHasher`] trait returns a 64 or 128-bit `Hash`. From this, two `u64` values are extracted.
 ///
