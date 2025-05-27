@@ -4,11 +4,10 @@
 //! PtrHash builds a _minimal perfect hash function_, that is,
 //! a hash function that maps a fixed set of keys to `{0, ..., n-1}`.
 //!
-//! PtrHash was developed for large key sets of at least 1 million keys, and has been tested up to 10^11 keys.
-//! It only uses 2.4 bits per key.
+//! PtrHash was developed for large key sets of at least 1 million keys, and has been tested up to `10^11` keys.
+//! In the default configuration, it uses 3.0 bits per key.
 //!
-//! It can also be used for arbitrary small sets.
-//! In this case, the space efficiency will be less due to a relatively large constant overhead.
+//! It can also be used for smaller sets. In this case, the space efficiency will be somewhat less due.
 //!
 //! See the GitHub [readme](https://github.com/ragnargrootkoerkamp/ptrhash)
 //! or paper ([arXiv](https://arxiv.org/abs/2502.15539), [blog version](https://curiouscoding.nl/posts/ptrhash/))
@@ -26,9 +25,8 @@
 //! let keys = ptr_hash::util::generate_keys(n);
 //!
 //! // Build the datastructure.
-//! // NOTE: For small sets, say <1M keys, use `PtrHashParams::default_fast()` instead.
-//! // The default parameters are optimized for large sets, and need large (>100k or so) inputs
-//! // to ensure internal bucket sizes don't deviate too much from their expectation.
+//! // This uses [`PtrHashParams::default_fast()`] with linear bucket fn and a `Vec<u32>` for remapping.
+//! // Only if squeezing out every bit is super important to you, consider one of the other variants.
 //! let mphf = <PtrHash>::new(&keys, PtrHashParams::default());
 //!
 //! // Get the index of a key.
@@ -66,6 +64,25 @@
 //! }
 //! ```
 //!
+//! ## Hash functions
+//!
+//! PtrHash benefits from using an as-fast-as-possible hash function.
+//!
+//! - For integers, use [`hash::RandomIntHash`], which aliases [`hash::FxHash`].
+//! - For strings, use [`hash::StringHash`] when the number of keys is at most `10^9`, and use [`hash::StrinHash128`] for more keys. These alias [`hash::Gx`] and [`hash::Gx128`].
+//!
+//! See the [`hash`] module documentation for better hashes in case these cause hash collisions.
+//!
+//! ```
+//! // Hashing strings
+//! use ptr_hash::{DefaultPtrHash, PtrHashParams, hash::StringHash};
+//!
+//! let keys = vec!["abc", "def"];
+//! let mphf = <DefaultPtrHash<StringHash, _, _>>::new(&keys, PtrHashParams::default());
+//!
+//! let idx = mphf.index(&"def");
+//! ```
+//!
 //! ## Partitioning
 //!
 //! By default, PtrHash partitions the keys into multiple parts.
@@ -76,6 +93,39 @@
 //! However, at query time there is a small overhead to compute the part of each key.
 //! To achieve slightly faster queries, set [`PtrHashParams::single_part`] to `true`,
 //! and then use [`PtrHash::index_single_part()`] instead of [`PtrHash::index()`].
+//!
+//! ## Sharding
+//!
+//! When the keys and/or their hashes do not all fit in memory at once, use sharding.
+//! See [`shard::Sharding`] for details of different sharding methods.
+//! ```
+//! use ptr_hash::{PtrHash, PtrHashParams, Sharding};
+//!
+//! let mut params = PtrHashParams::default();
+//! // The default value. For ~16GB of u64 hashes or ~32GB of u128 hashes.
+//! // Make sure to also leave space for the data structure itself.
+//! params.keys_per_shard = 1<<31;
+//! params.sharding = Sharding::Disk;
+//!
+//! let keys = vec![1,2,3]; // 10^12 or who knows how many keys.
+//! let mphf = <PtrHash>::new(&keys, params);
+//! ```
+//!
+//! ## Reducing space usage
+//!
+//! The default parameters are chosen for reliability, construction speed, and query speed, and give around 3 bits per keys.
+//! To achieve smaller sizes, consider using [`pack::CacheLineEF`] or [`pack::EliasFano`] as 'remap' structure, instead of `Vec<u32>`.
+//!
+//! Additionally, one can use the [`PtrHashParams::default_balanced()`] parameters, which use the `CubicEps` bucket function instead of `Linear`, and increase `lambda` from the default of `3.0` to `3.5`.
+//! [`PtrHashParams::default_compact()`] is even smaller, but even slower to construct, and generally less reliable.
+//!
+//! ```
+//! use ptr_hash::{PtrHash, PtrHashParams};
+//!
+//! let params = PtrHashParams::default_balanced();
+//! let keys = vec![1u64, 2, 3];
+//! let mphf = <PtrHash<_, _, ptr_hash::pack::EliasFano>>::new(&keys, params);
+//! ```
 
 /// Customizable Hasher trait.
 pub mod hash;
@@ -135,7 +185,7 @@ pub struct PtrHashParams<BF> {
     /// Bucket function
     pub bucket_fn: BF,
     /// Upper bound on number of keys per shard.
-    /// Default is 2^32, or 32GB of hashes per shard.
+    /// Default is 2^31, or 16GB of u64 hashes per shard.
     pub keys_per_shard: usize,
     /// When true, write each shard to a file instead of iterating multiple
     /// times.
