@@ -68,8 +68,8 @@
 //!
 //! PtrHash benefits from using an as-fast-as-possible hash function.
 //!
-//! - For integers, use [`hash::RandomIntHash`], which aliases [`hash::FxHash`].
-//! - For strings, use [`hash::StringHash`] when the number of keys is at most `10^9`, and use [`hash::StrinHash128`] for more keys. These alias [`hash::Gx`] and [`hash::Gx128`].
+//! - For integers, use [`hash::IntHash`], which aliases [`hash::FxHash`].
+//! - For strings, use [`hash::StringHash`] when the number of keys is at most `10^9`, and use [`hash::StringHash128`] for more keys. These alias [`hash::Gx`] and [`hash::Gx128`].
 //!
 //! See the [`hash`] module documentation for better hashes in case these cause hash collisions.
 //!
@@ -114,7 +114,7 @@
 //! ## Reducing space usage
 //!
 //! The default parameters are chosen for reliability, construction speed, and query speed, and give around 3 bits per keys.
-//! To achieve smaller sizes, consider using [`pack::CacheLineEF`] or [`pack::EliasFano`] as 'remap' structure, instead of `Vec<u32>`.
+//! To achieve smaller sizes, consider using [`cacheline_ef::CachelineEfVec`] or [`pack::EliasFano`] as 'remap' structure, instead of `Vec<u32>`.
 //!
 //! Additionally, one can use the [`PtrHashParams::default_balanced()`] parameters, which use the `CubicEps` bucket function instead of `Linear`, and increase `lambda` from the default of `3.0` to `3.5`.
 //! [`PtrHashParams::default_compact()`] is even smaller, but even slower to construct, and generally less reliable.
@@ -287,7 +287,7 @@ impl Default for PtrHashParams<Linear> {
 /// [`DefaultPtrHash`] fills in most values.
 ///
 /// Use this as [`DefaultPtrHash::new`] or `<DefaultPtrHash>::new`.
-pub type DefaultPtrHash<Hx = hash::RandomIntHash, Key = u64, BF = bucket_fn::Linear> =
+pub type DefaultPtrHash<Hx = hash::IntHash, Key = u64, BF = bucket_fn::Linear> =
     PtrHash<Key, BF, Vec<u32>, Hx, Vec<u8>>;
 
 /// Trait that keys must satisfy.
@@ -317,7 +317,7 @@ pub struct PtrHash<
     Key: KeyT + ?Sized = u64,
     BF: BucketFn = bucket_fn::Linear,
     F: Packed = Vec<u32>,
-    Hx: KeyHasher<Key> = hash::RandomIntHash,
+    Hx: KeyHasher<Key> = hash::IntHash,
     V: AsRef<[u8]> = Vec<u8>,
 > {
     params: PtrHashParams<BF>,

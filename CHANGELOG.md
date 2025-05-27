@@ -8,6 +8,8 @@
 - Make `default_fast` the actual `PtrHashParams::default()`, and rename the
   previous 'default' from the paper to `default_balanced`.
 - Make `RandomIntHash` the default hash function.
+- Rename `IntHash` => `StrongerIntHash` and `RandomIntHash` => `IntHash`
+  (because the latter should be the default).
 
 **Minor.**
 - Added tests

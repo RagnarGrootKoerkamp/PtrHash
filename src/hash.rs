@@ -4,17 +4,17 @@
 //!
 //! We provide:
 //! - [`NoHash`]: does nothing -- only use on truly random keys.
-//! - [`RandomIntHash`] = [`FxHash`], which does a single wrapping multiplication and should be good enough most of the time.
-//! - [`IntHash`]: Use this when the input keys are very regular, eg `0..1000`. (But then why do you need an MPHF anyway?)
+//! - [`IntHash`] = [`FxHash`], which does a single wrapping multiplication and should be good enough most of the time.
+//! - [`StrongerIntHash`]: Use this when the input keys are very regular, eg `0..1000`. (But then why do you need an MPHF anyway?)
 //!                Does a `u128` multiplication, and xors the high and low word together, like xxh3. Then does one more multiplication. Not very scientific but 'it works'.
 //! - [`GxInt`]: GxHash, but with the type 'inlined' so that it optimized better.
 //! - [`Xxh3Int`]: Xxh3, but with the type 'inlined' so that it optimized better.
 //!
-//! In practice, prefer [`RandomIntHash`] if it's good enough.
-//! Otherwise, fall back to [`IntHash`].
+//! In practice, prefer [`IntHash`] if it's good enough.
+//! Otherwise, fall back to [`StrongerIntHash`].
 //! If that still fails (which probably shouldn't happen) fall back to one of the two remaining
 //!
-//! If [`IntHash`] lacks sufficient randomness, use [`Xxh3Int`] instead, which is considerably slower but much stronger.
+//! If [`StrongerIntHash`] lacks sufficient randomness, use [`Xxh3Int`] instead, which is considerably slower but much stronger.
 //!
 //! ## String keys
 //!
@@ -87,7 +87,7 @@ impl<Key: KeyT + ?Sized, H: core::hash::Hasher + Default + Clone + Sync> KeyHash
 // Aliases
 
 /// A slightly faster but weaker hash for sufficiently random integers. Uses [`fxhash::FxHasher64`].
-pub type RandomIntHash = fxhash::FxHasher64;
+pub type IntHash = fxhash::FxHasher64;
 pub type FxHash = fxhash::FxHasher64;
 /// Type alias for xxhash (XXH3) hasher.
 ///
@@ -140,7 +140,7 @@ impl<Key: KeyT + ?Sized> KeyHasher<Key> for Gx128 {
 /// ```
 #[cfg_attr(feature = "epserde", derive(epserde::prelude::Epserde))]
 #[derive(Clone)]
-pub struct IntHash;
+pub struct StrongerIntHash;
 
 /// Mixing constant.
 pub const C: u64 = 0x517cc1b727220a95;
@@ -172,7 +172,7 @@ macro_rules! int_hashers {
                 }
             }
 
-            impl KeyHasher<$t> for IntHash {
+            impl KeyHasher<$t> for StrongerIntHash {
                 type H = u64;
                 #[inline(always)]
                 fn hash(x: &$t, seed: u64) -> u64 {
