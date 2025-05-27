@@ -611,9 +611,20 @@ impl<Key: KeyT, BF: BucketFn, F: Packed, Hx: KeyHasher<Key>, V: AsRef<[u8]>>
         self.slots
     }
 
+    /// Get the index for `key` in `[0, n)`.
+    #[inline(always)]
+    pub fn index(&self, key: &Key) -> usize {
+        let slot = self.index_no_remap(key);
+        if slot < self.n {
+            slot
+        } else {
+            self.remap.index(slot - self.n) as usize
+        }
+    }
+
     /// Get a non-minimal index of the given key, in `[0, n/alpha)`.
     /// Use `index` to get a key in `[0, n)`.
-    #[inline]
+    #[inline(always)]
     pub fn index_no_remap(&self, key: &Key) -> usize {
         let hx = self.hash_key(key);
         let b = self.bucket(hx);
@@ -624,12 +635,12 @@ impl<Key: KeyT, BF: BucketFn, F: Packed, Hx: KeyHasher<Key>, V: AsRef<[u8]>>
     /// Faster version of `index` for when there is only a single part.
     /// Use only when there is indeed a single part, i.e., after constructing
     /// with [`PtrHashParams::single_part`] set to `true`.
-    #[inline]
+    #[inline(always)]
     pub fn index_single_part(&self, key: &Key) -> usize {
-        let hx = self.hash_key(key);
-        let b = self.bucket_in_part(hx.high());
-        let pilot = self.pilots.as_ref().index(b);
-        let slot = self.slot_in_part(hx, pilot);
+        #[cfg(debug_assertions)]
+        assert_eq!(self.parts, 1);
+
+        let slot = self.index_single_part_no_remap(key);
         if slot < self.n {
             slot
         } else {
@@ -637,18 +648,15 @@ impl<Key: KeyT, BF: BucketFn, F: Packed, Hx: KeyHasher<Key>, V: AsRef<[u8]>>
         }
     }
 
-    /// Get the index for `key` in `[0, n)`.
-    #[inline]
-    pub fn index(&self, key: &Key) -> usize {
+    /// Faster version of `index` for when there is only a single part, without remapping.
+    /// Use only when there is indeed a single part, i.e., after constructing
+    /// with [`PtrHashParams::single_part`] set to `true`.
+    #[inline(always)]
+    pub fn index_single_part_no_remap(&self, key: &Key) -> usize {
         let hx = self.hash_key(key);
-        let b = self.bucket(hx);
-        let p = self.pilots.as_ref().index(b);
-        let slot = self.slot(hx, p);
-        if slot < self.n {
-            slot
-        } else {
-            self.remap.index(slot - self.n) as usize
-        }
+        let b = self.bucket_in_part(hx.high());
+        let pilot = self.pilots.as_ref().index(b);
+        self.slot_in_part(hx, pilot)
     }
 
     /// Takes an iterator over keys and returns an iterator over the indices of the keys.
@@ -934,7 +942,9 @@ impl<Key: KeyT, BF: BucketFn, F: Packed, Hx: KeyHasher<Key>, V: AsRef<[u8]>>
     ///
     /// (Unless SPLIT_BUCKETS is false, in which case all hashes are mapped to [0, self.b).)
     fn bucket_in_part(&self, x: u64) -> usize {
-        if BF::B_OUTPUT {
+        if BF::LINEAR {
+            self.rem_buckets.reduce(x)
+        } else if BF::B_OUTPUT {
             self.params.bucket_fn.call(x) as usize
         } else {
             self.rem_buckets.reduce(self.params.bucket_fn.call(x))
