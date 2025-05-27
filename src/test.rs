@@ -23,8 +23,25 @@ fn construct_random() {
     }
 }
 
-#[ignore = "for benchmarking only"]
+/// Construct the MPHF and test all keys are mapped to unique indices.
 #[test]
+#[ignore = "large"]
+fn test_1e9() {
+    env_logger::init();
+    let n = 1_000_000_000;
+    eprintln!("RANDOM Testing n = {}", n);
+    let keys = generate_keys(n);
+    let ptr_hash = DefaultPtrHash::<RandomIntHash, _, _>::new(&keys, PtrHashParams::default_fast());
+    let mut done = bitvec![0; n];
+    for key in keys {
+        let idx = ptr_hash.index(&key);
+        assert!(!done[idx]);
+        done.set(idx, true);
+    }
+}
+
+#[test]
+#[ignore = "for benchmarking only"]
 fn int_hash_speed() {
     let n = 10000000;
     let keys = (0..n as u64).map(|i| hash::C * i).collect::<Vec<_>>();
