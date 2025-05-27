@@ -74,7 +74,7 @@ pub trait KeyHasher<Key: ?Sized>: Clone + Sync {
 }
 
 /// All external hashers work.
-impl<Key: KeyT, H: core::hash::Hasher + Default + Clone + Sync> KeyHasher<Key> for H {
+impl<Key: KeyT + ?Sized, H: core::hash::Hasher + Default + Clone + Sync> KeyHasher<Key> for H {
     type H = u64;
     #[inline(always)]
     fn hash(x: &Key, seed: u64) -> u64 {
@@ -106,7 +106,7 @@ pub type StringHash128 = Gx128;
 #[cfg_attr(feature = "epserde", derive(epserde::prelude::Epserde))]
 #[derive(Clone)]
 pub struct Xxh3_128;
-impl<Key: KeyT> KeyHasher<Key> for Xxh3_128 {
+impl<Key: KeyT + ?Sized> KeyHasher<Key> for Xxh3_128 {
     type H = u128;
     #[inline(always)]
     fn hash(x: &Key, seed: u64) -> u128 {
@@ -120,7 +120,7 @@ impl<Key: KeyT> KeyHasher<Key> for Xxh3_128 {
 #[cfg_attr(feature = "epserde", derive(epserde::prelude::Epserde))]
 #[derive(Clone)]
 pub struct Gx128;
-impl<Key: KeyT> KeyHasher<Key> for Gx128 {
+impl<Key: KeyT + ?Sized> KeyHasher<Key> for Gx128 {
     type H = u128;
     #[inline(always)]
     fn hash(x: &Key, seed: u64) -> u128 {

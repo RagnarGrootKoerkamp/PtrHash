@@ -292,7 +292,7 @@ pub type DefaultPtrHash<Hx = hash::RandomIntHash, Key = u64, BF = bucket_fn::Lin
 
 /// Trait that keys must satisfy.
 pub trait KeyT: Send + Sync + std::hash::Hash {}
-impl<T: Send + Sync + std::hash::Hash> KeyT for T {}
+impl<T: Send + Sync + std::hash::Hash + ?Sized> KeyT for T {}
 
 // Some fixed algorithmic decisions.
 type Rp = FastReduce;
@@ -396,7 +396,7 @@ where
     }
 }
 
-/// Construction methods.
+/// Construction methods taking a list of keys.
 impl<Key: KeyT, BF: BucketFn, F: MutPacked, Hx: KeyHasher<Key>> PtrHash<Key, BF, F, Hx, Vec<u8>> {
     /// Create a new PtrHash instance from the given keys.
     ///
@@ -434,7 +434,12 @@ impl<Key: KeyT, BF: BucketFn, F: MutPacked, Hx: KeyHasher<Key>> PtrHash<Key, BF,
         ptr_hash.compute_pilots(keys.par_iter())?;
         Some(ptr_hash)
     }
+}
 
+/// Construction (helper) methods working with unsized keys.
+impl<Key: KeyT + ?Sized, BF: BucketFn, F: MutPacked, Hx: KeyHasher<Key>>
+    PtrHash<Key, BF, F, Hx, Vec<u8>>
+{
     /// Same as `new` above, but takes a `ParallelIterator` over keys instead of a slice.
     ///
     /// The iterator must be cloneable, since construction can fail for the
@@ -647,7 +652,7 @@ impl<Key: KeyT, BF: BucketFn, F: MutPacked, Hx: KeyHasher<Key>> PtrHash<Key, BF,
 }
 
 /// Indexing methods.
-impl<Key: KeyT, BF: BucketFn, F: Packed, Hx: KeyHasher<Key>, V: AsRef<[u8]>>
+impl<Key: KeyT + ?Sized, BF: BucketFn, F: Packed, Hx: KeyHasher<Key>, V: AsRef<[u8]>>
     PtrHash<Key, BF, F, Hx, V>
 {
     /// Return the number of bits per element used for the pilots (`.0`) and the
@@ -763,7 +768,7 @@ impl<Key: KeyT, BF: BucketFn, F: Packed, Hx: KeyHasher<Key>, V: AsRef<[u8]>>
             'a,
             const B: usize,
             const MINIMAL: bool,
-            Key: KeyT,
+            Key: KeyT + ?Sized,
             Q: Borrow<Key> + 'a,
             KeyIt: Iterator<Item = Q> + 'a,
             BF: BucketFn,
@@ -782,7 +787,7 @@ impl<Key: KeyT, BF: BucketFn, F: Packed, Hx: KeyHasher<Key>, V: AsRef<[u8]>>
                 'a,
                 const B: usize,
                 const MINIMAL: bool,
-                Key: KeyT,
+                Key: KeyT + ?Sized,
                 Q: Borrow<Key> + 'a,
                 KeyIt: Iterator<Item = Q> + 'a,
                 BF: BucketFn,

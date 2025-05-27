@@ -8,13 +8,12 @@ fn main() {
     let keys = ptr_hash::util::generate_string_keys(n);
 
     // String slice keys, linear bucket function, EliasFano remap, GxHash hash fucntion.
-    type MyPtrHash<'a> = PtrHash<&'a [u8], Linear, EliasFano, Gx>;
+    type MyPtrHash = PtrHash<[u8], Linear, EliasFano, Gx>;
     let mut params = PtrHashParams::default();
     params.sharding = Sharding::Disk;
 
     let mphf =
         MyPtrHash::new_from_par_iter(keys.len(), keys.par_iter().map(|s| s.as_slice()), params);
 
-    // FIXME: The extra & here is ugly.
-    mphf.index(&b"abc".as_slice());
+    mphf.index(b"abc".as_slice());
 }
