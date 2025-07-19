@@ -8,11 +8,10 @@ a list of `n` distinct keys into `{0,...,n-1}`.
 It is based on/inspired by [PTHash](https://github.com/jermp/pthash) (and much
 more than just a Rust rewrite).
 
-**Paper.** Read the preprint ([arXiv](https://arxiv.org/abs/2502.15539)) for details on the algorithm
-and benchmarks against other methods:
+**Paper.**
 
 *Ragnar Groot Koerkamp*. PtrHash: Minimal Perfect Hashing at RAM Throughput.
-arXiv (2025). [doi.org/10.48550/arXiv.2502.15539](https://doi.org/10.48550/arXiv.2502.15539)
+SEA (2025). [doi.org/10.4230/LIPIcs.SEA.2025.21](https://doi.org/10.4230/LIPIcs.SEA.2025.21)
 
 **Evals.** Source code for the paper evals can be found in
 [examples/evals.rs](examples/evals.rs), and analysis is [evals.py](evals.py).
