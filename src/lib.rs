@@ -287,7 +287,7 @@ impl Default for PtrHashParams<Linear> {
 /// [`DefaultPtrHash`] fills in most values.
 ///
 /// Use this as [`DefaultPtrHash::new`] or `<DefaultPtrHash>::new`.
-pub type DefaultPtrHash<Hx = hash::IntHash, Key = u64, BF = bucket_fn::Linear> =
+pub type DefaultPtrHash<Hx = hash::FastIntHash, Key = u64, BF = bucket_fn::Linear> =
     PtrHash<Key, BF, Vec<u32>, Hx, Vec<u8>>;
 
 /// Trait that keys must satisfy.
@@ -317,7 +317,7 @@ pub struct PtrHash<
     Key: KeyT + ?Sized = u64,
     BF: BucketFn = bucket_fn::Linear,
     F: Packed = Vec<u32>,
-    Hx: KeyHasher<Key> = hash::IntHash,
+    Hx: KeyHasher<Key> = hash::FastIntHash,
     V: AsRef<[u8]> = Vec<u8>,
 > {
     params: PtrHashParams<BF>,

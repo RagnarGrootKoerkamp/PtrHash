@@ -6,8 +6,8 @@ use cacheline_ef::CachelineEfVec;
 use ptr_hash::{
     bucket_fn::{BucketFn, CubicEps, Linear, Optimal, Skewed, Square},
     hash::{
-        Gx, Gx128, GxInt, IntHash, KeyHasher, NoHash, StringHash, StringHash128, StrongerIntHash,
-        Xxh3, Xxh3Int, Xxh3_128,
+        FastIntHash, Gx, Gx128, GxInt, KeyHasher, NoHash, StringHash, StringHash128,
+        StrongerIntHash, Xxh3, Xxh3Int, Xxh3_128,
     },
     pack::{EliasFano, MutPacked},
     stats::BucketStats,
@@ -805,7 +805,7 @@ fn string_queries() {
 
             test::<R, _, NoHash>(&keys, PARAMS_FAST, &mut results);
             test::<R, _, StrongerIntHash>(&keys, PARAMS_FAST, &mut results);
-            test::<R, _, IntHash>(&keys, PARAMS_FAST, &mut results);
+            test::<R, _, FastIntHash>(&keys, PARAMS_FAST, &mut results);
             test::<R, _, Xxh3Int>(&keys, PARAMS_FAST, &mut results);
             test::<R, _, StringHash>(&keys, PARAMS_FAST, &mut results);
             test::<R, _, StringHash128>(&keys, PARAMS_FAST, &mut results);
@@ -817,7 +817,7 @@ fn string_queries() {
         {
             let keys: Vec<Box<u64>> = generate_keys(n).into_iter().map(|k| Box::new(k)).collect();
 
-            test::<R, _, IntHash>(&keys, PARAMS_FAST, &mut results);
+            test::<R, _, FastIntHash>(&keys, PARAMS_FAST, &mut results);
             test::<R, _, StringHash>(&keys, PARAMS_FAST, &mut results);
             test::<R, _, StringHash128>(&keys, PARAMS_FAST, &mut results);
             test::<R, _, Gx>(&keys, PARAMS_FAST, &mut results);
@@ -840,7 +840,7 @@ fn string_queries() {
                 .collect::<Vec<_>>();
             eprintln!("Keys size: {}", std::mem::size_of_val(keys.as_slice()));
 
-            test::<R, _, IntHash>(&keys, PARAMS_FAST, &mut results);
+            test::<R, _, FastIntHash>(&keys, PARAMS_FAST, &mut results);
             test::<R, _, StringHash>(&keys, PARAMS_FAST, &mut results);
             test::<R, _, StringHash128>(&keys, PARAMS_FAST, &mut results);
             test::<R, _, Gx>(&keys, PARAMS_FAST, &mut results);
@@ -863,7 +863,7 @@ fn string_queries() {
                 .collect::<Vec<_>>();
             eprintln!("Keys size: {}", std::mem::size_of_val(keys.as_slice()));
 
-            test::<R, _, IntHash>(&keys, PARAMS_FAST, &mut results);
+            test::<R, _, FastIntHash>(&keys, PARAMS_FAST, &mut results);
             test::<R, _, StringHash>(&keys, PARAMS_FAST, &mut results);
             test::<R, _, StringHash128>(&keys, PARAMS_FAST, &mut results);
             test::<R, _, Gx>(&keys, PARAMS_FAST, &mut results);
@@ -887,7 +887,7 @@ fn string_queries() {
                 .collect::<Vec<_>>();
             eprintln!("Keys size: {}", std::mem::size_of_val(keys.as_slice()));
 
-            test::<R, _, IntHash>(&keys, PARAMS_FAST, &mut results);
+            test::<R, _, FastIntHash>(&keys, PARAMS_FAST, &mut results);
             test::<R, _, StringHash>(&keys, PARAMS_FAST, &mut results);
             test::<R, _, StringHash128>(&keys, PARAMS_FAST, &mut results);
             test::<R, _, Gx>(&keys, PARAMS_FAST, &mut results);
@@ -897,7 +897,7 @@ fn string_queries() {
         {
             let keys: Vec<Vec<u8>> = generate_string_keys(n);
 
-            test::<R, _, IntHash>(&keys, PARAMS_FAST, &mut results);
+            test::<R, _, FastIntHash>(&keys, PARAMS_FAST, &mut results);
             test::<R, _, Xxh3>(&keys, PARAMS_FAST, &mut results);
             test::<R, _, Xxh3_128>(&keys, PARAMS_FAST, &mut results);
             test::<R, _, Gx>(&keys, PARAMS_FAST, &mut results);

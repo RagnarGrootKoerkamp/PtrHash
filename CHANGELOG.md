@@ -8,12 +8,12 @@
 - Make `default_fast` the actual `PtrHashParams::default()`, and rename the
   previous 'default' from the paper to `default_balanced`.
 - Make `RandomIntHash` the default hash function.
-- Rename `IntHash` => `StrongerIntHash` and `RandomIntHash` => `IntHash`
+- Rename `IntHash` => `StrongerIntHash` and `RandomIntHash` => `FastIntHash`
   (because the latter should be the default).
 
 **Minor.**
 - Added tests
-- The `epserde` feature is not enabled by default
+- The `epserde` feature is now not enabled by default
 
 
 ## v1.1

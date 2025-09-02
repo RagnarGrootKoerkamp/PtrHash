@@ -12,7 +12,8 @@ fn construct_random() {
     ]) {
         eprintln!("RANDOM Testing n = {}", n);
         let keys = generate_keys(n);
-        let ptr_hash = DefaultPtrHash::<IntHash, _, _>::new(&keys, PtrHashParams::default_fast());
+        let ptr_hash =
+            DefaultPtrHash::<FastIntHash, _, _>::new(&keys, PtrHashParams::default_fast());
         let mut done = bitvec![0; n];
         for key in keys {
             let idx = ptr_hash.index(&key);
@@ -30,7 +31,7 @@ fn test_1e9() {
     let n = 1_000_000_000;
     eprintln!("RANDOM Testing n = {}", n);
     let keys = generate_keys(n);
-    let ptr_hash = DefaultPtrHash::<IntHash, _, _>::new(&keys, PtrHashParams::default_fast());
+    let ptr_hash = DefaultPtrHash::<FastIntHash, _, _>::new(&keys, PtrHashParams::default_fast());
     let mut done = bitvec![0; n];
     for key in keys {
         let idx = ptr_hash.index(&key);
@@ -48,7 +49,7 @@ fn int_hash_speed() {
 
     let start = std::time::Instant::now();
     for k in &keys {
-        black_box(IntHash::hash(k, seed));
+        black_box(FastIntHash::hash(k, seed));
     }
     eprintln!("Time {:?}", start.elapsed());
 
