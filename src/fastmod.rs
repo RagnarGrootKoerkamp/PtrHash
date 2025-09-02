@@ -4,6 +4,7 @@ use crate::reduce::Reduce;
 
 // Multiply a u128 by u64 and return the upper 64 bits of the result.
 // ((lowbits * d as u128) >> 128) as u64
+#[allow(unused)]
 fn mul128_u64(lowbits: u128, d: u64) -> u64 {
     let bot_half = ((lowbits & u64::MAX as u128) * d as u128) >> 64; // Won't overflow
     let top_half = (lowbits >> 64) * d as u128;
@@ -15,6 +16,7 @@ fn mul128_u64(lowbits: u128, d: u64) -> u64 {
 /// Taken from https://github.com/lemire/fastmod/blob/master/include/fastmod.h
 #[derive(Copy, Clone, Debug, MemSize)]
 #[cfg_attr(feature = "epserde", derive(epserde::prelude::Epserde))]
+#[allow(unused)]
 pub struct FM64 {
     d: u64,
     m: u128,

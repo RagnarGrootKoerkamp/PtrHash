@@ -47,6 +47,7 @@ impl Reduce for FastReduce {
 #[cfg_attr(feature = "epserde", derive(epserde::prelude::Epserde))]
 #[cfg_attr(feature = "epserde", repr(C))]
 #[cfg_attr(feature = "epserde", zero_copy)]
+#[allow(unused)]
 pub struct MulReduce {
     mask: u64,
 }
