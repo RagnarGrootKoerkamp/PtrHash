@@ -307,3 +307,16 @@ fn string_key_types() {
     // h.index(Box::new("a".to_string()));
     // h.index(&Box::new("a".to_string()));
 }
+
+#[test]
+fn single_part() {
+    let n = 1_000_000;
+    let keys = util::generate_keys(n);
+
+    let mut params = PtrHashParams::default();
+    params.single_part = true;
+
+    let mphf = <PtrHash>::new(&keys, params);
+
+    mphf.index_single_part(&0);
+}

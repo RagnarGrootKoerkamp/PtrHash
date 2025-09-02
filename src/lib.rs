@@ -459,18 +459,23 @@ impl<Key: KeyT + ?Sized, BF: BucketFn, F: MutPacked, Hx: KeyHasher<Key>>
     fn init(n: usize, mut params: PtrHashParams<BF>) -> Self {
         // assert!(n < (1 << 40), "Number of keys must be less than 2^40.");
 
-        let shards = match params.sharding {
-            Sharding::None => 1,
+        let shards = match (params.single_part, params.sharding) {
+            (true, _) => 1,
+            (_, Sharding::None) => 1,
             _ => n.div_ceil(params.keys_per_shard),
         };
 
         // Formula of Vigna, eps-cost-sharding: https://arxiv.org/abs/2503.18397
         // (1-alpha)/2, so that on average we still have some room to play with.
-        let eps = (1.0 - params.alpha) / 2.0;
-        let x = n as f64 * eps * eps / 2.0;
-        let target_parts = x / x.ln();
-        let parts_per_shard = (target_parts.floor() as usize) / shards;
-        let parts = parts_per_shard.max(1) * shards;
+        let parts = if params.single_part {
+            1
+        } else {
+            let eps = (1.0 - params.alpha) / 2.0;
+            let x = n as f64 * eps * eps / 2.0;
+            let target_parts = x / x.ln();
+            let parts_per_shard = (target_parts.floor() as usize) / shards;
+            parts_per_shard.max(1) * shards
+        };
 
         let keys_per_part = n / parts;
         let parts_per_shard = parts / shards;
