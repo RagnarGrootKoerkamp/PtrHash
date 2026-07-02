@@ -28,6 +28,7 @@
 //! call specialized functions rather than going through the generic `Hasher`
 //! interface.
 //!
+#[cfg(feature = "gxhash")]
 use gxhash::GxBuildHasher;
 
 use crate::KeyT;
@@ -93,11 +94,14 @@ pub type FxHash = fxhash::FxHasher64;
 ///
 /// Prefer [`Xxh3Int`] for integers, which avoids some overhead of the default hasher.
 pub type Xxh3 = xxhash_rust::xxh3::Xxh3Default;
+#[cfg(feature = "gxhash")]
 pub type Gx = gxhash::GxHasher;
 
 /// Use gxhash for 64-bit string hashing.
+#[cfg(feature = "gxhash")]
 pub type StringHash = Gx;
 /// Use gxhash for 128-bit string hashing.
+#[cfg(feature = "gxhash")]
 pub type StringHash128 = Gx128;
 
 // Implementations
@@ -117,9 +121,11 @@ impl<Key: KeyT + ?Sized> KeyHasher<Key> for Xxh3_128 {
 }
 
 /// 128-bit version of XXH3.
+#[cfg(feature = "gxhash")]
 #[cfg_attr(feature = "epserde", derive(epserde::prelude::Epserde))]
 #[derive(Clone)]
 pub struct Gx128;
+#[cfg(feature = "gxhash")]
 impl<Key: KeyT + ?Sized> KeyHasher<Key> for Gx128 {
     type H = u128;
     #[inline(always)]
@@ -156,6 +162,7 @@ pub struct NoHash;
 pub struct Xxh3Int;
 
 /// Inlined version of Xxh3 for integer keys.
+#[cfg(feature = "gxhash")]
 #[cfg_attr(feature = "epserde", derive(epserde::prelude::Epserde))]
 #[derive(Clone)]
 pub struct GxInt;
@@ -191,6 +198,7 @@ macro_rules! int_hashers {
                 }
             }
 
+            #[cfg(feature = "gxhash")]
             impl KeyHasher<$t> for GxInt {
                 type H = u64;
                 #[inline(always)]

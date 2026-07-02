@@ -4,6 +4,7 @@
 //! This is implemented for `Vec<u8|u16|u32|u64>`, `CachelineEfVec`, and `EliasFano` from `sucds`.
 //! `Packed` is also implemented for respective non-owning (slice) types to support epserde.
 
+#[cfg(feature = "elias-fano")]
 use sucds::mii_sequences::EliasFanoBuilder;
 
 use cacheline_ef::{CachelineEf, CachelineEfVec};
@@ -110,8 +111,10 @@ impl<T: AsRef<[CachelineEf]> + Sync> Packed for CachelineEfVec<T> {
 }
 
 /// Wrapper around the Sucds implementation.
+#[cfg(feature = "elias-fano")]
 pub struct EliasFano(sucds::mii_sequences::EliasFano);
 
+#[cfg(feature = "elias-fano")]
 impl MutPacked for EliasFano {
     fn default() -> Self {
         EliasFano(Default::default())
@@ -132,6 +135,7 @@ impl MutPacked for EliasFano {
     }
 }
 
+#[cfg(feature = "elias-fano")]
 impl Packed for EliasFano {
     fn index(&self, index: usize) -> u64 {
         self.0.select(index as _).unwrap() as u64

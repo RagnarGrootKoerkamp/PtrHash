@@ -1,0 +1,95 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  ci:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: x86_64 · default features
+            runner: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            rustflags: -C target-cpu=native
+            features: ""
+            test: true
+          - name: x86_64 · no-default-features
+            runner: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            rustflags: -C target-cpu=native
+            features: --no-default-features
+            test: true
+          - name: x86_64 · elias-fano only
+            runner: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            rustflags: -C target-cpu=native
+            features: --no-default-features --features elias-fano
+            test: true
+          - name: x86_64 · gxhash only
+            runner: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            rustflags: -C target-cpu=native
+            features: --no-default-features --features gxhash
+            test: true
+          - name: x86_64 · all stable features
+            runner: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            rustflags: -C target-cpu=native
+            features: --no-default-features --features elias-fano,gxhash,epserde,hashers
+            test: true
+          - name: aarch64 · default features
+            runner: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+            rustflags: -C target-cpu=native
+            features: ""
+            test: true
+          - name: aarch64 · no-default-features
+            runner: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+            rustflags: -C target-cpu=native
+            features: --no-default-features
+            test: true
+          # 32-bit platform cross compilation.
+          # `sucds` is 64-bit only and `gxhash` needs AES so it can't build.
+          # We clear RUSTFLAGS to override the cargo config.toml target-cpu flag
+            # because it'll resolve to x86_64 on this runner (there are no 32-bit
+          # gitub runners). We run `cargo build` and not `check`, so to catch
+          # 32-bit overflows.
+          - name: i686 · no-default-features (cross)
+            runner: ubuntu-latest
+            target: i686-unknown-linux-gnu
+            rustflags: ""
+            features: --no-default-features
+            test: false
+          - name: armv7 · no-default-features (cross)
+            runner: ubuntu-latest
+            target: armv7-unknown-linux-gnueabihf
+            rustflags: ""
+            features: --no-default-features
+            test: false
+    env:
+      RUSTFLAGS: ${{ matrix.rustflags }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
+        with:
+          key: ${{ matrix.name }}
+      - name: Build library
+        run: cargo build --lib ${{ matrix.features }} --target ${{ matrix.target }}
+      - name: Test (lib + doctests)
+        if: ${{ matrix.test }}
+        run: |
+          cargo test --lib ${{ matrix.features }} --target ${{ matrix.target }}
+          cargo test --doc ${{ matrix.features }} --target ${{ matrix.target }}
