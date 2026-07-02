@@ -28,12 +28,16 @@ pub enum Sharding {
 
 impl clap::ValueEnum for Sharding {
     fn value_variants<'a>() -> &'a [Self] {
-        // 128 GiB for Hybrid.
+        // 128 GiB for Hybrid & usize::MAX for 32-bit systems.
+        #[cfg(target_pointer_width = "64")]
+        const HYBRID_BYTES: usize = 1 << 37;
+        #[cfg(not(target_pointer_width = "64"))]
+        const HYBRID_BYTES: usize = usize::MAX;
         &[
             Sharding::None,
             Sharding::Memory,
             Sharding::Disk,
-            Sharding::Hybrid(1 << 37),
+            Sharding::Hybrid(HYBRID_BYTES),
         ]
     }
     fn to_possible_value<'a>(&self) -> Option<PossibleValue> {

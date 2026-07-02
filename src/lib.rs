@@ -75,12 +75,14 @@
 //!
 //! ```
 //! // Hashing strings
+//! # #[cfg(feature = "gxhash")] {
 //! use ptr_hash::{DefaultPtrHash, PtrHashParams, hash::StringHash};
 //!
 //! let keys = vec!["abc", "def"];
 //! let mphf = <DefaultPtrHash<StringHash, _, _>>::new(&keys, PtrHashParams::default());
 //!
 //! let idx = mphf.index(&"def");
+//! # }
 //! ```
 //!
 //! ## Partitioning
@@ -120,11 +122,13 @@
 //! [`PtrHashParams::default_compact()`] is even smaller, but even slower to construct, and generally less reliable.
 //!
 //! ```
+//! # #[cfg(feature = "elias-fano")] {
 //! use ptr_hash::{PtrHash, PtrHashParams};
 //!
 //! let params = PtrHashParams::default_balanced();
 //! let keys = vec![1u64, 2, 3];
 //! let mphf = <PtrHash<_, _, ptr_hash::pack::EliasFano>>::new(&keys, params);
+//! # }
 //! ```
 
 /// Customizable Hasher trait.

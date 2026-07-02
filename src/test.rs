@@ -59,11 +59,14 @@ fn int_hash_speed() {
     }
     eprintln!("Time {:?}", start.elapsed());
 
-    let start = std::time::Instant::now();
-    for k in &keys {
-        black_box(GxInt::hash(k, seed));
+    #[cfg(feature = "gxhash")]
+    {
+        let start = std::time::Instant::now();
+        for k in &keys {
+            black_box(GxInt::hash(k, seed));
+        }
+        eprintln!("Time {:?}", start.elapsed());
     }
-    eprintln!("Time {:?}", start.elapsed());
 
     let start = std::time::Instant::now();
     for k in &keys {
@@ -263,6 +266,7 @@ fn integer_key_types() {
 }
 
 #[test]
+#[cfg(feature = "gxhash")]
 fn string_key_types() {
     let h = DefaultPtrHash::<StringHash, &str>::new(&["a"], PtrHashParams::default());
 
