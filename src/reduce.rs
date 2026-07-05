@@ -21,6 +21,7 @@ pub trait Reduce: Copy + Sync + std::fmt::Debug {
 /// Taken from https://lemire.me/blog/2016/06/27/a-fast-alternative-to-the-modulo-reduction/
 /// NOTE: This only uses the lg(n) high-order bits of entropy from the hash.
 #[derive(Copy, Clone, Debug, MemSize)]
+#[mem_size(flat)]
 #[cfg_attr(feature = "epserde", derive(epserde::prelude::Epserde))]
 #[cfg_attr(feature = "epserde", repr(C))]
 #[cfg_attr(feature = "epserde", zero_copy)]
@@ -44,6 +45,7 @@ impl Reduce for FastReduce {
 /// Multiply by mixing constant C and take the required number of bits.
 /// Only works when the modulus is a power of 2.
 #[derive(Copy, Clone, Debug, MemSize)]
+#[mem_size(flat)]
 #[cfg_attr(feature = "epserde", derive(epserde::prelude::Epserde))]
 #[cfg_attr(feature = "epserde", repr(C))]
 #[cfg_attr(feature = "epserde", zero_copy)]

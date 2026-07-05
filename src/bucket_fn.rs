@@ -19,6 +19,7 @@ pub trait BucketFn: Clone + Copy + Sync + Debug {
 
 /// The function simply returns `x` itself.
 #[derive(Clone, Copy, Debug, MemSize, Default)]
+#[mem_size(flat)]
 #[cfg_attr(feature = "epserde", derive(epserde::prelude::Epserde))]
 #[cfg_attr(feature = "epserde", repr(C))]
 #[cfg_attr(feature = "epserde", zero_copy)]
@@ -46,6 +47,7 @@ impl BucketFn for Linear {
 /// line2: y = x * ((1 - gamma) / (1 - beta)) + (gamma - beta) / (1 - beta)
 ///                ~~~~~~~~~ slope2 ~~~~~~~~~   ~~~~~~~~~~ offset ~~~~~~~~~
 #[derive(Clone, Copy, Debug, MemSize)]
+#[mem_size(flat)]
 #[cfg_attr(feature = "epserde", derive(epserde::prelude::Epserde))]
 #[cfg_attr(feature = "epserde", repr(C))]
 #[cfg_attr(feature = "epserde", zero_copy)]
@@ -110,6 +112,7 @@ impl BucketFn for Skewed {
 
 /// The optimal bucket function of PHOBIC, with a variable `eps`.
 #[derive(Clone, Copy, Debug, MemSize)]
+#[mem_size(flat)]
 #[cfg_attr(feature = "epserde", derive(epserde::prelude::Epserde))]
 #[cfg_attr(feature = "epserde", repr(C))]
 #[cfg_attr(feature = "epserde", zero_copy)]
@@ -131,6 +134,7 @@ impl BucketFn for Optimal {
 
 /// `x*x`
 #[derive(Clone, Copy, Debug, MemSize, Default)]
+#[mem_size(flat)]
 #[cfg_attr(feature = "epserde", derive(epserde::prelude::Epserde))]
 #[cfg_attr(feature = "epserde", repr(C))]
 #[cfg_attr(feature = "epserde", zero_copy)]
@@ -144,6 +148,7 @@ impl BucketFn for Square {
 
 /// `x*x * 255/256 + x/256`
 #[derive(Clone, Copy, Debug, MemSize, Default)]
+#[mem_size(flat)]
 #[cfg_attr(feature = "epserde", derive(epserde::prelude::Epserde))]
 #[cfg_attr(feature = "epserde", repr(C))]
 #[cfg_attr(feature = "epserde", zero_copy)]
@@ -157,6 +162,7 @@ impl BucketFn for SquareEps {
 
 /// `x * x * (1 + x)/2`
 #[derive(Clone, Copy, Debug, MemSize, Default)]
+#[mem_size(flat)]
 #[cfg_attr(feature = "epserde", derive(epserde::prelude::Epserde))]
 #[cfg_attr(feature = "epserde", repr(C))]
 #[cfg_attr(feature = "epserde", zero_copy)]
@@ -171,6 +177,7 @@ impl BucketFn for Cubic {
 
 /// `x * x * (1 + x)/2 * 255/256 + x/256`
 #[derive(Clone, Copy, Debug, MemSize, Default)]
+#[mem_size(flat)]
 #[cfg_attr(feature = "epserde", derive(epserde::prelude::Epserde))]
 #[cfg_attr(feature = "epserde", repr(C))]
 #[cfg_attr(feature = "epserde", zero_copy)]

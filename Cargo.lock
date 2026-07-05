@@ -12,6 +12,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "allocator-api2"
+version = "0.2.21"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "683d7910e743518b0e34f1186f92494becacb047c7b6bf616c96772180fef923"
+
+[[package]]
 name = "anes"
 version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -145,7 +151,7 @@ checksum = "af737c6c59cb018ecbe6472cbdf86d39c59d78252febfe311953a991b6e4ed85"
 dependencies = [
  "common_traits",
  "epserde",
- "mem_dbg",
+ "mem_dbg 0.3.0",
 ]
 
 [[package]]
@@ -406,7 +412,7 @@ dependencies = [
  "common_traits",
  "epserde-derive",
  "maligned",
- "mem_dbg",
+ "mem_dbg 0.3.0",
  "mmap-rs",
  "sealed",
  "thiserror 2.0.12",
@@ -423,6 +429,12 @@ dependencies = [
  "quote",
  "syn",
 ]
+
+[[package]]
+name = "equivalent"
+version = "1.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "877a4ace8713b0bcf2a4e7eec82529c029f1d0619886d18145fea96c3ffe5c0f"
 
 [[package]]
 name = "errno"
@@ -445,6 +457,12 @@ name = "fastrand"
 version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "37909eebbb50d72f9059c3b6d82c0463f2ff062c9e95845c43a6c9c0355411be"
+
+[[package]]
+name = "foldhash"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "77ce24cb58228fbb8aa041425bb1050850ac19177686ea6e0f41a70416f56fdb"
 
 [[package]]
 name = "funty"
@@ -490,6 +508,17 @@ checksum = "459196ed295495a68f7d7fe1d84f6c4b7ff0e21fe3017b2f283c6fac3ad803c9"
 dependencies = [
  "cfg-if",
  "crunchy",
+]
+
+[[package]]
+name = "hashbrown"
+version = "0.16.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "841d1cc9bed7f9236f321df977030373f4a4163ae1a7dbfe1a51a2c1a51d9100"
+dependencies = [
+ "allocator-api2",
+ "equivalent",
+ "foldhash",
 ]
 
 [[package]]
@@ -665,8 +694,19 @@ checksum = "a3e3eb8a4c851185832fb250e5c041e74f4408e11fd56263cc1f61b48f9174f5"
 dependencies = [
  "bitflags 2.9.0",
  "maligned",
- "mem_dbg-derive",
+ "mem_dbg-derive 0.2.0",
  "mmap-rs",
+]
+
+[[package]]
+name = "mem_dbg"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "53b7e410fe9eee1406f61ee968dc333175047b7d029fc0776ec309c29dd7059b"
+dependencies = [
+ "bitflags 2.9.0",
+ "hashbrown",
+ "mem_dbg-derive 0.3.2",
 ]
 
 [[package]]
@@ -674,6 +714,17 @@ name = "mem_dbg-derive"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f266c6ba1558dee16c56363c3dc6093a97a2451ddf29f928d5da042ee330537b"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "mem_dbg-derive"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f110f5c815866d5a4a56efe163a7d8b8ee2749f295efae3b3adb84e6c1a617fb"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -887,7 +938,7 @@ dependencies = [
  "itertools 0.14.0",
  "lazy_static",
  "log",
- "mem_dbg",
+ "mem_dbg 0.4.2",
  "metrohash",
  "murmur2",
  "murmur3",

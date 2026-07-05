@@ -15,6 +15,7 @@ fn mul128_u64(lowbits: u128, d: u64) -> u64 {
 /// FastMod64
 /// Taken from https://github.com/lemire/fastmod/blob/master/include/fastmod.h
 #[derive(Copy, Clone, Debug, MemSize)]
+#[mem_size(flat)]
 #[cfg_attr(feature = "epserde", derive(epserde::prelude::Epserde))]
 #[allow(unused)]
 pub struct FM64 {
@@ -37,6 +38,7 @@ impl Reduce for FM64 {
 /// FastMod32, using the low 32 bits of the hash.
 /// Taken from https://github.com/lemire/fastmod/blob/master/include/fastmod.h
 #[derive(Copy, Clone, Debug, MemSize)]
+#[mem_size(flat)]
 #[cfg_attr(feature = "epserde", derive(epserde::prelude::Epserde))]
 pub struct FM32 {
     d: u64,

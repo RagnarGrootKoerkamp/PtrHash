@@ -177,6 +177,7 @@ use crate::{hash::*, pack::Packed, reduce::*, util::log_duration};
 /// [`PtrHashParams::default()`], [`PtrHashParams::default_fast()`], or
 /// [`PtrHashParams::default_compact()`].
 #[derive(Clone, Copy, Debug, MemSize)]
+#[mem_size(flat)]
 #[cfg_attr(feature = "epserde", derive(epserde::prelude::Epserde))]
 #[cfg_attr(feature = "epserde", deep_copy)]
 pub struct PtrHashParams<BF> {

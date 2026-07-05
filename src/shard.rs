@@ -11,6 +11,7 @@ use super::*;
 
 /// The sharding method to use.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default, MemSize)]
+#[mem_size(flat)]
 #[cfg_attr(feature = "epserde", derive(epserde::prelude::Epserde))]
 #[cfg_attr(feature = "epserde", repr(C))]
 #[cfg_attr(feature = "epserde", zero_copy)]
