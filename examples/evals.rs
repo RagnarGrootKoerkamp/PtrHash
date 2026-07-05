@@ -1,5 +1,3 @@
-#![feature(type_changing_struct_update, try_blocks, slice_as_array)]
-
 use std::{cmp::min, collections::HashMap, hint::black_box, time::Instant};
 
 use cacheline_ef::CachelineEfVec;
@@ -144,11 +142,16 @@ fn bucket_fn_stats() {
     let keys = &generate_keys(n);
 
     fn build(keys: &Vec<u64>, lambda: f64, bucket_fn: impl BucketFn) -> BucketStats {
+        let default = PtrHashParams::default_compact();
         let params = PtrHashParams {
             lambda,
             bucket_fn,
             alpha: 0.99,
-            ..PtrHashParams::default_compact()
+
+            remap: default.remap,
+            keys_per_shard: default.keys_per_shard,
+            sharding: default.sharding,
+            single_part: default.single_part,
         };
         MyPtrHash::new_with_stats(&keys, params).1
     }
@@ -189,11 +192,16 @@ fn size() {
     ) -> Option<Result> {
         type MyPtrHash<BF, R> = PtrHash<u64, BF, R, StrongerIntHash, Vec<u8>>;
 
+        let default = PtrHashParams::default_compact();
         let params = PtrHashParams {
             alpha,
             lambda,
             bucket_fn,
-            ..PtrHashParams::default_compact()
+
+            remap: default.remap,
+            keys_per_shard: default.keys_per_shard,
+            sharding: default.sharding,
+            single_part: default.single_part,
         };
         eprintln!("Running {alpha} {lambda} {bucket_fn:?}");
         // Construct on 6 threads.
@@ -279,11 +287,16 @@ fn remap() {
     ) -> Result {
         type MyPtrHash<BF, R> = PtrHash<u64, BF, R, StrongerIntHash, Vec<u8>>;
 
+        let default = PtrHashParams::default_compact();
         let params = PtrHashParams {
             alpha,
             lambda,
             bucket_fn,
-            ..PtrHashParams::default_compact()
+
+            remap: default.remap,
+            keys_per_shard: default.keys_per_shard,
+            sharding: default.sharding,
+            single_part: default.single_part,
         };
 
         // Construct on 6 threads.
