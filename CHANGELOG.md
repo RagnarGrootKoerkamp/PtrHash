@@ -1,5 +1,9 @@
 # Changelog
 
+<!-- next-header -->
+
+## git
+
 ## v2.0.0-alpha.1
 - Breaking: use `fastmod` for `slot_in_part` instead.
 - Use Sebastiano Vigna's formula of the [epsilon-cost-sharding
