@@ -1,6 +1,10 @@
 use epserde::prelude::*;
 use ptr_hash::{PtrHash, PtrHashParams};
 
+/// XXH3 version since the default FxHash does not implement the epserde traits.
+type PtrHashXxh3 =
+    PtrHash<u64, ptr_hash::bucket_fn::Linear, Vec<u32>, ptr_hash::hash::Xxh3Int, Vec<u8>>;
+
 fn main() {
     env_logger::init();
 
@@ -12,7 +16,7 @@ fn main() {
     // Build the datastructure.
     eprintln!("Building mphf..");
     let start = std::time::Instant::now();
-    let mphf = <PtrHash>::new(&keys, PtrHashParams::default());
+    let mphf = PtrHashXxh3::new(&keys, PtrHashParams::default());
     eprintln!("construction took: {:?}", start.elapsed());
 
     let path = "/tmp/test.mphf";
@@ -33,7 +37,7 @@ fn main() {
     // Ep-serde from mmap.
     eprintln!("Load into mmap, with epserde..");
     let mphf2 =
-        <PtrHash>::load_mmap(path, Flags::RANDOM_ACCESS | Flags::TRANSPARENT_HUGE_PAGES).unwrap();
+        PtrHashXxh3::load_mmap(path, Flags::RANDOM_ACCESS | Flags::TRANSPARENT_HUGE_PAGES).unwrap();
 
     // Ep-serde from manually read memory.
     // May fail because we require 64-byte alignment, and `fs::read` is not guaranteed to give that.

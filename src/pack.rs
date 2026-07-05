@@ -79,6 +79,17 @@ macro_rules! slice_impl {
                 std::mem::size_of_val(self)
             }
         }
+        impl Packed for &[$t] {
+            fn index(&self, index: usize) -> u64 {
+                unsafe { (*self.get_unchecked(index)) as u64 }
+            }
+            fn prefetch(&self, index: usize) {
+                crate::util::prefetch_index(self, index);
+            }
+            fn size_in_bytes(&self) -> usize {
+                std::mem::size_of_val(*self)
+            }
+        }
     };
 }
 
