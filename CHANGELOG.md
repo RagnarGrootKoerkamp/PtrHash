@@ -3,6 +3,7 @@
 <!-- next-header -->
 
 ## git
+- Support 32-bit platforms and add CI ([#26](https://github.com/RagnarGrootKoerkamp/ptrhash/pull/26))
 
 ## v2.0.0-alpha.1
 - Breaking: use `fastmod` for `slot_in_part` instead.
