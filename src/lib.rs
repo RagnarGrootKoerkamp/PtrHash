@@ -68,7 +68,8 @@
 //!
 //! PtrHash benefits from using an as-fast-as-possible hash function.
 //!
-//! - For integers, use [`hash::IntHash`], which aliases [`hash::FxHash`].
+//! - If your keys are already random integers, use [`hash::NoHash`].
+//! - For integers, use [`hash::FastIntHash`], which aliases [`hash::FxHash`].
 //! - For strings, use [`hash::StringHash`] when the number of keys is at most `10^9`, and use [`hash::StringHash128`] for more keys. These alias [`hash::Gx`] and [`hash::Gx128`].
 //!
 //! See the [`hash`] module documentation for better hashes in case these cause hash collisions.
