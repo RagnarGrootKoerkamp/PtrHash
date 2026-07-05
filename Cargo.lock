@@ -925,7 +925,6 @@ dependencies = [
  "cityhash-102-rs",
  "clap",
  "colored",
- "common_traits",
  "env_logger",
  "epserde",
  "epserde-derive",
