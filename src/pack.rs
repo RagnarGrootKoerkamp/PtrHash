@@ -7,6 +7,7 @@
 #[cfg(feature = "elias-fano")]
 use sucds::mii_sequences::EliasFanoBuilder;
 
+#[cfg(feature = "cacheline-ef")]
 use cacheline_ef::{CachelineEf, CachelineEfVec};
 
 /// A trait for backing storage types.
@@ -86,6 +87,7 @@ slice_impl!(u16);
 slice_impl!(u32);
 slice_impl!(u64);
 
+#[cfg(feature = "cacheline-ef")]
 impl MutPacked for CachelineEfVec<Vec<CachelineEf>> {
     fn default() -> Self {
         Default::default()
@@ -98,6 +100,7 @@ impl MutPacked for CachelineEfVec<Vec<CachelineEf>> {
     }
 }
 
+#[cfg(feature = "cacheline-ef")]
 impl<T: AsRef<[CachelineEf]> + Sync> Packed for CachelineEfVec<T> {
     fn index(&self, index: usize) -> u64 {
         unsafe { self.index_unchecked(index) }

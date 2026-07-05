@@ -41,7 +41,7 @@ fastrand = "2.0.1"
 serde = { version = "1.0.215", features = ["derive"] }
 mem_dbg = "0.4.2"
 
-cacheline-ef = "1.1.0"
+cacheline-ef = { version = "1.1.0", optional = true }
 
 # Default included hash functions
 fxhash = "0.2.1"
@@ -59,10 +59,11 @@ log = "0.4.27"
 gxhash = { version = "3.5.0", optional = true }
 
 [features]
-default = ["elias-fano", "gxhash"]
+default = ["elias-fano", "cacheline-ef", "gxhash"]
 epserde = ["dep:epserde", "dep:epserde-derive", "cacheline-ef/epserde"]
 # Enable iter_array_chunks unstable feature for iter_batch_exact, which is only for benchmarking.
 unstable = []
+cacheline-ef = ["dep:cacheline-ef"]
 elias-fano = ["dep:sucds"]
 gxhash = ["dep:gxhash"]
 # Allow additional hash functions, on top of just FxHash and XxHash.
@@ -83,4 +84,4 @@ required-features = ["elias-fano", "gxhash"]
 
 [[example]]
 name = "evals"
-required-features = ["elias-fano", "gxhash"]
+required-features = ["elias-fano", "cacheline-ef", "gxhash"]
