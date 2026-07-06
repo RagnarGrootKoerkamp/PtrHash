@@ -4,7 +4,9 @@ use std::{
     sync::Mutex,
 };
 
+#[cfg(feature = "clap")]
 use clap::builder::PossibleValue;
+
 use log::{info, trace};
 
 use super::*;
@@ -27,6 +29,7 @@ pub enum Sharding {
     Hybrid(usize),
 }
 
+#[cfg(feature = "clap")]
 impl clap::ValueEnum for Sharding {
     fn value_variants<'a>() -> &'a [Self] {
         // 128 GiB for Hybrid & usize::MAX for 32-bit systems.
