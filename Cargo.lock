@@ -880,6 +880,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "prefetch-index"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9057806a8d77d67bccdc0f542db43737a6f19ada3efab2adc63277feea27310f"
+
+[[package]]
 name = "proc-macro-error-attr2"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -933,6 +939,7 @@ dependencies = [
  "metrohash",
  "murmur2",
  "murmur3",
+ "prefetch-index",
  "rand",
  "rand_chacha",
  "rayon",

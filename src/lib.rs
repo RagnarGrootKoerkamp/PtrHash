@@ -847,7 +847,7 @@ impl<
             next_hashes[idx] = hx;
 
             next_buckets[idx] = self.bucket(next_hashes[idx]);
-            crate::util::prefetch_index(self.pilots.as_ref(), next_buckets[idx]);
+            prefetch_index::prefetch_index(self.pilots.as_ref(), next_buckets[idx]);
         }
 
         // Manual iterator implementation so we avoid the overhead and
@@ -909,7 +909,7 @@ impl<
                     let cur_bucket = self.next_buckets[idx];
                     self.next_hashes[idx] = next_hash;
                     self.next_buckets[idx] = self.ph.bucket(self.next_hashes[idx]);
-                    crate::util::prefetch_index(self.ph.pilots.as_ref(), self.next_buckets[idx]);
+                    prefetch_index::prefetch_index(self.ph.pilots.as_ref(), self.next_buckets[idx]);
                     let pilot = self.ph.pilots.as_ref().index(cur_bucket);
                     let slot = self.ph.slot(cur_hash, pilot);
 
@@ -966,7 +966,7 @@ impl<
         // Prefetch.
         for idx in 0..K {
             buckets[idx] = self.bucket(hashes[idx]);
-            crate::util::prefetch_index(self.pilots.as_ref(), buckets[idx]);
+            prefetch_index::prefetch_index(self.pilots.as_ref(), buckets[idx]);
         }
         // Query.
         from_fn(
@@ -1057,7 +1057,7 @@ impl<
                 // Prefetch.
                 for idx in 0..K {
                     buckets[idx] = self.bucket(hs[idx]);
-                    crate::util::prefetch_index(self.pilots.as_ref(), buckets[idx]);
+                    prefetch_index::prefetch_index(self.pilots.as_ref(), buckets[idx]);
                 }
             }
 

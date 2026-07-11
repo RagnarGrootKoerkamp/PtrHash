@@ -54,6 +54,7 @@ murmur3 =  {version="0.5.2", optional=true}
 wyhash =  {version="0.5.0", optional=true}
 log = "0.4.27"
 gxhash = { version = "3.5.0", optional = true }
+prefetch-index = "0.2.1"
 
 [features]
 default = ["elias-fano", "cacheline-ef", "gxhash"]

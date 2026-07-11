@@ -52,7 +52,7 @@ macro_rules! vec_impl {
                 unsafe { (*self.get_unchecked(index)) as u64 }
             }
             fn prefetch(&self, index: usize) {
-                crate::util::prefetch_index(self, index);
+                prefetch_index::prefetch_index(self, index);
             }
             fn size_in_bytes(&self) -> usize {
                 std::mem::size_of_val(self.as_slice())
@@ -73,7 +73,7 @@ macro_rules! slice_impl {
                 unsafe { (*self.get_unchecked(index)) as u64 }
             }
             fn prefetch(&self, index: usize) {
-                crate::util::prefetch_index(self, index);
+                prefetch_index::prefetch_index(self, index);
             }
             fn size_in_bytes(&self) -> usize {
                 std::mem::size_of_val(self)
@@ -84,7 +84,7 @@ macro_rules! slice_impl {
                 unsafe { (*self.get_unchecked(index)) as u64 }
             }
             fn prefetch(&self, index: usize) {
-                crate::util::prefetch_index(self, index);
+                prefetch_index::prefetch_index(self, index);
             }
             fn size_in_bytes(&self) -> usize {
                 std::mem::size_of_val(*self)
