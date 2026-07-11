@@ -178,6 +178,7 @@ use bucket_fn::Linear;
 use bucket_fn::SquareEps;
 use itertools::izip;
 use itertools::Itertools;
+use log::debug;
 use log::trace;
 use mem_dbg::MemSize;
 use pack::MutPacked;
@@ -531,7 +532,9 @@ impl<
         } else {
             let eps = (1.0 - params.alpha) / 2.0;
             let x = n as f64 * eps * eps / 2.0;
-            let target_parts = x / x.ln();
+            // Half the number of target parts for some safety margin.
+            // Otherwise, the largest part is often still too large for small inputs.
+            let target_parts = x / x.ln() / 2.0;
             let parts_per_shard = (target_parts.floor() as usize) / shards;
             parts_per_shard.max(1) * shards
         };
@@ -612,7 +615,7 @@ impl<
             // Choose a global seed s.
             self.seed = rng.random();
             if tries == 1 {
-                log::info!("First seed tried: {}", self.seed);
+                log::trace!("First seed tried: {}", self.seed);
             } else {
                 log::warn!("Previous seed {old_seed} failed.");
                 log::warn!("Trying seed number {tries}: {}.", self.seed);
@@ -675,7 +678,7 @@ impl<
         self.pilots = pilots;
 
         let (p, r) = self.bits_per_element();
-        trace!("bits/element: {}", p + r);
+        debug!("bits/element: {}", p + r);
         log_duration("total build", overall_start);
         Some(stats)
     }
