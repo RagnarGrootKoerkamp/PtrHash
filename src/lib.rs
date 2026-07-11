@@ -176,7 +176,6 @@ use bucket_fn::BucketFn;
 use bucket_fn::CubicEps;
 use bucket_fn::Linear;
 use bucket_fn::SquareEps;
-use fastmod::FM32;
 use itertools::izip;
 use itertools::Itertools;
 use log::trace;
@@ -329,7 +328,8 @@ impl<T: Send + Sync + std::hash::Hash + ?Sized> KeyT for T {}
 // Some fixed algorithmic decisions.
 type Rp = FastReduce;
 type Rb = FastReduce;
-type RemSlots = FM32;
+// NOTE: This is not a faithful modulo for 64-bit values, but either way only returns values up to `d`.
+type RemSlots = fastmod::FM32;
 type Pilot = u64;
 type PilotHash = u64;
 
