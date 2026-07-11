@@ -27,27 +27,38 @@ In case you run into any kind of issue or things are unclear,
 please make issues and/or PRs, or reach out on [twitter]((https://twitter.com/curious_coding))/[bsky](https://bsky.app/profile/curiouscoding.nl).
 I'm more than happy to help out with integrating PtrHash.
 
-## Performance
+## Performance on small inputs
 
-PtrHash supports up to `2^40` keys (and probably more). For default parameters, constructing a MPHF of `n=10^9` integer keys gives:
-- Construction takes `30s` on my `i7-10750H` (`2.6GHz`) on 6 threads.
-  - `6s` to sort hashes,
-  - `23s` to find pilots.
-- Memory usage is `2.41bits/key`:
-  - `2.29bits/key` for pilots,
-  - `0.12bits/key` for remapping.
-- Queries take:
-  - `21ns/key` when indexing sequentially,
-  - `8.7ns/key` when streaming with prefetching,
-  - `2.6ns/key` when streaming with prefetching, using `4` threads.
-- When giving up on minimality of the hash and allowing values up to `n/alpha`,
-  query times slightly improve:
-  - `17.6ns/key` when indexing sequentially,
-  - `7.9ns/key` when streaming using prefetching,
-  - `2.6ns/key` when streaming with prefetching, using `4` threads.
+Space usage and query throughput of a for-loop in ns/key as measured by `examples/query_bench.rs`:
 
-Query throughput per thread fully saturates the prefetching bandwidth of each
-core, and multithreaded querying fully saturates the DDR4 memory bandwidth.
+| method         | hash   | bits/key | 100k | 1M  | 10M | 100 M |
+|----------------|--------|----------|------|-----|-----|-------|
+| FastPtrHash    | NoHash | 2.67     | 1.5  | 2.2 | 3.1 | 7.6   |
+| DefaultPtrHash | NoHash | 3.00     | 1.7  | 2.6 | 3.3 | 8.5   |
+| CompactPtrHash | NoHash | 2.15     | 4.4  | 5.5 | 6.8 | 15.6  |
+| FastPtrHash    | FxHash | 2.67     | 1.7  | 2.5 | 3.2 | 8.2   |
+| DefaultPtrHash | FxHash | 3.00     | 2.0  | 2.7 | 3.7 | 9.1   |
+| CompactPtrHash | FxHash | 2.15     | 4.8  | 5.8 | 7.2 | 15.7  |
+
+
+## Performance on large input
+
+PtrHash supports up to `2^40` keys (and probably more).
+For `n=10^9` integer keys with `FxHash`, we get the following on my `i7-10750H`
+at `3.6GHz` with 6 cores (see `examples/large_bench.rs`).
+The construction uses multi-threading only for `CompactPtrHash`, and remapping
+is skipped for `FastPtrHash`.
+The last two columns indicate the query throughput for streaming queries with
+prefetching 32 iterations ahead, and for prefetching in batches of 32.
+
+| method         | pilots bits/key | remap  bits/key | space bits/key | construction ns/key | loop ns/key | stream ns/key | batch ns/key |
+|----------------|-----------------|-----------------|----------------|---------------------|-------------|---------------|--------------|
+| FastPtrHash    | 2.67            | -               | 2.67           | 343.5               | 9.7         | 7.5           | 9.0          |
+| DefaultPtrHash | 2.67            | 0.33            | 3.00           | 349.9               | 12.0        | 8.3           | 9.4          |
+| CompactPtrHash | 2.05            | 0.10            | 2.15           | 49.0 (12t)          | 19.8        | 8.5           | 10.1         |
+
+Streaming query throughput per thread fully saturates the memory bandwidth of each
+core (around 7.5 ns/cache line), and with multi-threading the full DDR4 memory bandwidth is saturated.
 
 ## Input
 
@@ -103,9 +114,9 @@ for key in &keys {
     taken[idx] = true;
 }
 
-// In case you want maximum query throughput at the cost of returning non-minimal values, use `FastPtrHash`.
+// In case you want maximum query throughput at the cost of returning non-minimal values,
+// use `FastPtrHash`. `phf.max_index()` will be roughly `1.01*n`.
 let phf = <FastPtrHash>::new(&keys, PtrHashParams::default());
-// phf.max_index() will be roughly `1.01*n`.
 
 for key in &keys {
     let idx = phf.index(&key);

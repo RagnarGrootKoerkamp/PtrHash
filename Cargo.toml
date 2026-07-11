@@ -84,3 +84,11 @@ required-features = ["elias-fano", "gxhash"]
 [[example]]
 name = "evals"
 required-features = ["elias-fano", "cacheline-ef", "gxhash"]
+
+[[example]]
+name = "query_bench"
+required-features = ["elias-fano"]
+
+[[example]]
+name = "large_bench"
+required-features = ["elias-fano"]
