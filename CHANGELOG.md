@@ -4,6 +4,15 @@
 
 ## git
 - Support 32-bit platforms and add CI ([#26](https://github.com/RagnarGrootKoerkamp/ptrhash/pull/26))
+- Move a number of dependencies behind (default-on) features and remove some
+  unused deps. ([#26](https://github.com/RagnarGrootKoerkamp/ptrhash/pull/26),
+  [#29](https://github.com/RagnarGrootKoerkamp/ptrhash/pull/29),  [#30](https://github.com/RagnarGrootKoerkamp/ptrhash/pull/30))
+- Make things work with stable rust.
+- Add new simpler `FastPtrHash`, `DefaultPtrHash`, and `CompactPtrHash` type aliases.
+  - Use `FastPtrHash` if a non-minimal PHF with 1% overhead is enough.
+  - Use `CompactPtrHash` if you need parallel construction and/or a minimal space usage.
+- `index_no_remap` and `index_single_part` are now replaced by generics. ([#28](https://github.com/RagnarGrootKoerkamp/ptrhash/issues/28))
+- Add more benchmarks to readme.
 
 ## v2.0.0-alpha.1
 - Breaking: use `fastmod` for `slot_in_part` instead.
