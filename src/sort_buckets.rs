@@ -3,8 +3,8 @@ use crate::bucket_idx::BucketIdx;
 use rdst::RadixSort;
 use std::time::Instant;
 
-impl<Key: KeyT + ?Sized, BF: BucketFn, F: Packed, Hx: KeyHasher<Key>>
-    PtrHash<Key, BF, F, Hx, Vec<u8>>
+impl<Key: KeyT + ?Sized, BF: BucketFn, F: Packed, Hx: KeyHasher<Key>, const SINGLE_PART: bool, const REMAP: bool>
+    PtrHash<Key, BF, F, Hx, Vec<u8>, SINGLE_PART, REMAP>
 {
     /// Returns:
     /// 1. Hashes

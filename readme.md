@@ -86,12 +86,12 @@ let idx = mphf.index(&key);
 assert!(idx < n);
 
 // Get the non-minimal index of a key. Slightly faster, but can be >=n.
-let _idx = mphf.index_no_remap(&key);
+let _idx = mphf.index(&key);
 
 // An iterator over the indices of the keys.
 // 32: number of iterations ahead to prefetch.
 // true: remap to a minimal key in [0, n).
-let indices = mphf.index_stream::<32, true, _>(&keys);
+let indices = mphf.index_stream::<32, _>(&keys);
 assert_eq!(indices.sum::<usize>(), (n * (n - 1)) / 2);
 
 // Test that all items map to different indices

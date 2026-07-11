@@ -8,15 +8,29 @@ use crate::util::generate_keys;
 fn construct_random() {
     for n in (0..10).chain([
         10, 30, 100, 300, 1000, 3000, 10_000, 30_000, 100_000, 300_000, 1_000_000, 3_000_000,
-        10_000_000,
+        10_000_000, 20_000_000, 30_000_000,
     ]) {
         eprintln!("RANDOM Testing n = {}", n);
         let keys = generate_keys(n);
-        let ptr_hash =
-            DefaultPtrHash::<FastIntHash, _, _>::new(&keys, PtrHashParams::default_fast());
+        let ptr_hash = DefaultPtrHash::<FastIntHash, _>::new(&keys, PtrHashParams::default_fast());
         let mut done = bitvec![0; n];
-        for key in keys {
+        for key in &keys {
             let idx = ptr_hash.index(&key);
+            assert!(!done[idx]);
+            done.set(idx, true);
+        }
+        let ptr_hash = FastPtrHash::<FastIntHash, _>::new(&keys, PtrHashParams::default_fast());
+        let mut done = bitvec![0; ptr_hash.max_index()];
+        for key in &keys {
+            let idx = ptr_hash.index(key);
+            assert!(!done[idx]);
+            done.set(idx, true);
+        }
+        let ptr_hash =
+            CompactPtrHash::<FastIntHash, _>::new(&keys, PtrHashParams::default_compact());
+        let mut done = bitvec![0; n];
+        for key in &keys {
+            let idx = ptr_hash.index(key);
             assert!(!done[idx]);
             done.set(idx, true);
         }
@@ -31,10 +45,27 @@ fn test_1e9() {
     let n = 1_000_000_000;
     eprintln!("RANDOM Testing n = {}", n);
     let keys = generate_keys(n);
-    let ptr_hash = DefaultPtrHash::<FastIntHash, _, _>::new(&keys, PtrHashParams::default_fast());
+
+    let ptr_hash = DefaultPtrHash::<FastIntHash, _>::new(&keys, PtrHashParams::default_fast());
     let mut done = bitvec![0; n];
-    for key in keys {
-        let idx = ptr_hash.index(&key);
+    for key in &keys {
+        let idx = ptr_hash.index(key);
+        assert!(!done[idx]);
+        done.set(idx, true);
+    }
+
+    let ptr_hash = FastPtrHash::<FastIntHash, _>::new(&keys, PtrHashParams::default_fast());
+    let mut done = bitvec![0; ptr_hash.max_index()];
+    for key in &keys {
+        let idx = ptr_hash.index(key);
+        assert!(!done[idx]);
+        done.set(idx, true);
+    }
+
+    let ptr_hash = CompactPtrHash::<FastIntHash, _>::new(&keys, PtrHashParams::default_compact());
+    let mut done = bitvec![0; n];
+    for key in &keys {
+        let idx = ptr_hash.index(key);
         assert!(!done[idx]);
         done.set(idx, true);
     }
@@ -87,7 +118,7 @@ fn construct_multiples() {
             eprintln!("MULTIPLES OF {m} Testing n = {}", n);
             let keys = (0..n as u64).map(|i| m * i).collect::<Vec<_>>();
             let ptr_hash =
-                DefaultPtrHash::<StrongerIntHash, _, _>::new(&keys, PtrHashParams::default_fast());
+                DefaultPtrHash::<StrongerIntHash, _>::new(&keys, PtrHashParams::default_fast());
             let mut done = bitvec![0; n];
             for key in keys {
                 let idx = ptr_hash.index(&key);
@@ -102,8 +133,8 @@ fn construct_multiples() {
 fn index_stream() {
     for n in [2, 10, 100, 1000, 10_000, 100_000, 1_000_000] {
         let keys = generate_keys(n);
-        let ptr_hash = <PtrHash>::new(&keys, Default::default());
-        let sum = ptr_hash.index_stream::<32, true, _>(&keys).sum::<usize>();
+        let ptr_hash = <DefaultPtrHash>::new(&keys, Default::default());
+        let sum = ptr_hash.index_stream::<32, _>(&keys).sum::<usize>();
         assert_eq!(sum, (n * (n - 1)) / 2, "Failure for n = {n}");
     }
 }
@@ -115,7 +146,7 @@ fn index_batch() {
         let n = n.next_multiple_of(32);
         let keys = generate_keys(n);
         let ptr_hash = <PtrHash>::new(&keys, Default::default());
-        let sum = ptr_hash.index_batch_exact::<32, true>(&keys).sum::<usize>();
+        let sum = ptr_hash.index_batch_exact::<32>(&keys).sum::<usize>();
         assert_eq!(sum, (n * (n - 1)) / 2);
     }
 }
@@ -132,13 +163,13 @@ fn in_memory_sharding() {
     let n = 1 << 25;
     let range = 0..n as u64;
     let keys = range.clone().into_par_iter();
-    let ptr_hash = <PtrHash<_, _, Vec<u32>, StrongerIntHash, _>>::new_from_par_iter(
+    let ptr_hash = <CompactPtrHash<StrongerIntHash>>::new_from_par_iter(
         n,
         keys.clone(),
         PtrHashParams {
             keys_per_shard: 1 << 22,
             sharding: Sharding::Memory,
-            ..PtrHashParams::default_fast()
+            ..PtrHashParams::default_compact()
         },
     );
     eprintln!("Checking duplicates...");
@@ -155,13 +186,13 @@ fn on_disk_sharding() {
     let n = 1 << 25;
     let range = 0..n as u64;
     let keys = range.clone().into_par_iter();
-    let ptr_hash = <PtrHash<_, _, Vec<u32>, StrongerIntHash, _>>::new_from_par_iter(
+    let ptr_hash = <CompactPtrHash<StrongerIntHash>>::new_from_par_iter(
         n,
         keys.clone(),
         PtrHashParams {
             keys_per_shard: 1 << 22,
             sharding: Sharding::Disk,
-            ..PtrHashParams::default_fast()
+            ..PtrHashParams::default_compact()
         },
     );
     eprintln!("Checking duplicates...");
@@ -181,13 +212,13 @@ fn many_keys_memory() {
     let n_query = 1 << 27;
     let range = 0..n as u64;
     let keys = range.clone().into_par_iter();
-    let ptr_hash = <PtrHash<_, _, Vec<u32>, StrongerIntHash, _>>::new_from_par_iter(
+    let ptr_hash = <CompactPtrHash<StrongerIntHash>>::new_from_par_iter(
         n,
         keys.clone(),
         PtrHashParams {
             keys_per_shard: 1 << 30,
             sharding: Sharding::Memory,
-            ..PtrHashParams::default_fast()
+            ..PtrHashParams::default_compact()
         },
     );
     // Since running all queries is super slow, we only check a subset of them.
@@ -211,13 +242,13 @@ fn many_keys_disk() {
     let n_query = 1 << 27;
     let range = 0..n as u64;
     let keys = range.clone().into_par_iter();
-    let ptr_hash = <PtrHash<_, _, Vec<u32>, StrongerIntHash, _>>::new_from_par_iter(
+    let ptr_hash = <CompactPtrHash<StrongerIntHash>>::new_from_par_iter(
         n,
         keys.clone(),
         PtrHashParams {
             keys_per_shard: 1 << 30,
             sharding: Sharding::Disk,
-            ..PtrHashParams::default_fast()
+            ..PtrHashParams::default_compact()
         },
     );
     // Since running all queries is super slow, we only check a subset of them.
@@ -318,10 +349,9 @@ fn single_part() {
     let n = 1_000_000;
     let keys = util::generate_keys(n);
 
-    let mut params = PtrHashParams::default();
-    params.single_part = true;
+    let params = PtrHashParams::default();
 
-    let mphf = <PtrHash>::new(&keys, params);
+    let mphf = <PtrHash<u64, _, Vec<u32>, hash::FastIntHash, _, true, true>>::new(&keys, params);
 
-    mphf.index_single_part(&0);
+    mphf.index(&0);
 }

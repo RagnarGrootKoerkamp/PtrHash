@@ -57,7 +57,7 @@ fn main() {
     // 32: number of iterations ahead to prefetch.
     // true: remap to a minimal key in [0, n).
     eprintln!("Check sum..");
-    let indices = mphf2.index_stream::<32, true, _>(&keys);
+    let indices = mphf2.index_stream_maybe_remap::<32, true, _>(&keys);
     assert_eq!(indices.sum::<usize>(), (n * (n - 1)) / 2);
 
     // Test that all items map to different indices

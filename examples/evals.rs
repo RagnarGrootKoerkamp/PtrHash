@@ -64,8 +64,6 @@ const PARAMS_FAST: PtrHashParams<Linear> = PtrHashParams {
     // defaults...
     keys_per_shard: 1 << 31,
     sharding: Sharding::None,
-    remap: true,
-    single_part: false,
 };
 
 #[allow(unused)]
@@ -76,8 +74,6 @@ const PARAMS_DEFAULT: PtrHashParams<CubicEps> = PtrHashParams {
     // defaults...
     keys_per_shard: 1 << 31,
     sharding: Sharding::None,
-    remap: true,
-    single_part: false,
 };
 
 const PARAMS_COMPACT: PtrHashParams<CubicEps> = PtrHashParams {
@@ -87,8 +83,6 @@ const PARAMS_COMPACT: PtrHashParams<CubicEps> = PtrHashParams {
     // defaults...
     keys_per_shard: 1 << 31,
     sharding: Sharding::None,
-    remap: true,
-    single_part: false,
 };
 
 #[derive(Debug, Serialize, Default)]
@@ -148,10 +142,8 @@ fn bucket_fn_stats() {
             bucket_fn,
             alpha: 0.99,
 
-            remap: default.remap,
             keys_per_shard: default.keys_per_shard,
             sharding: default.sharding,
-            single_part: default.single_part,
         };
         MyPtrHash::new_with_stats(&keys, params).1
     }
@@ -198,10 +190,8 @@ fn size() {
             lambda,
             bucket_fn,
 
-            remap: default.remap,
             keys_per_shard: default.keys_per_shard,
             sharding: default.sharding,
-            single_part: default.single_part,
         };
         eprintln!("Running {alpha} {lambda} {bucket_fn:?}");
         // Construct on 6 threads.
@@ -264,7 +254,7 @@ fn construction_memory() {
     let n = 1_000_000_000;
     let keys = &generate_keys(n);
 
-    type MyPtrHash = PtrHash<u64, CubicEps, CachelineEfVec, StrongerIntHash, Vec<u8>>;
+    type MyPtrHash = PtrHash<u64, CubicEps, CachelineEfVec, StrongerIntHash, Vec<u8>, false, true>;
 
     let params = PARAMS_COMPACT;
     // Construct on 6 threads.
@@ -285,7 +275,7 @@ fn remap() {
         lambda: f64,
         bucket_fn: impl BucketFn + Send,
     ) -> Result {
-        type MyPtrHash<BF, R> = PtrHash<u64, BF, R, StrongerIntHash, Vec<u8>>;
+        type MyPtrHash<BF, R> = PtrHash<u64, BF, R, StrongerIntHash, Vec<u8>, false, true>;
 
         let default = PtrHashParams::default_compact();
         let params = PtrHashParams {
@@ -293,10 +283,8 @@ fn remap() {
             lambda,
             bucket_fn,
 
-            remap: default.remap,
             keys_per_shard: default.keys_per_shard,
             sharding: default.sharding,
-            single_part: default.single_part,
         };
 
         // Construct on 6 threads.
@@ -337,8 +325,8 @@ fn remap() {
             }
             sum
         });
-        let q32_phf = time_query(keys, || ph.index_stream::<32, false, _>(keys));
-        let q32_mphf = time_query(keys, || ph.index_stream::<32, true, _>(keys));
+        let q32_phf = time_query(keys, || ph.index_stream_maybe_remap::<32, false, _>(keys));
+        let q32_mphf = time_query(keys, || ph.index_stream_maybe_remap::<32, true, _>(keys));
 
         let r = Result {
             n: keys.len(),
@@ -402,7 +390,7 @@ fn sharding(sharding: Sharding, path: &str) {
     let keys = range.into_par_iter();
     let start = Instant::now();
     let bucket_fn = CubicEps;
-    type MyPtrHash = PtrHash<u64, CubicEps, CachelineEfVec, StrongerIntHash, Vec<u8>>;
+    type MyPtrHash = PtrHash<u64, CubicEps, CachelineEfVec, StrongerIntHash, Vec<u8>, false, true>;
     let ptr_hash = MyPtrHash::new_from_par_iter(
         n,
         keys,
@@ -438,7 +426,7 @@ fn sharding(sharding: Sharding, path: &str) {
 
 fn query_batching() {
     fn test(keys: &Vec<u64>, params: PtrHashParams<impl BucketFn>, rs: &mut Vec<QueryResult>) {
-        type MyPtrHash<BF> = PtrHash<u64, BF, Vec<u32>, StrongerIntHash, Vec<u8>>;
+        type MyPtrHash<BF> = PtrHash<u64, BF, Vec<u32>, StrongerIntHash, Vec<u8>, false, true>;
         eprintln!("Building {params:?}");
         // Construct on 6 threads.
         let (ph, c6) = time(|| MyPtrHash::new(&keys, params));
@@ -496,12 +484,12 @@ fn query_batching() {
         rs.push(r.clone());
 
         fn batch<const A: usize, BF: BucketFn>(
-            ph: &PtrHash<u64, BF, Vec<u32>, StrongerIntHash, Vec<u8>>,
+            ph: &PtrHash<u64, BF, Vec<u32>, StrongerIntHash, Vec<u8>, false, true>,
             keys: &Vec<u64>,
             r: &QueryResult,
             rs: &mut Vec<QueryResult>,
         ) {
-            let stream = time_query(keys, || ph.index_stream::<A, false, _>(keys));
+            let stream = time_query(keys, || ph.index_stream_maybe_remap::<A, false, _>(keys));
             // Somehow, index_batch has very weird scaling behaviour in A.
             // index_batch2 *does* improve as A increases, and so we use that one instead.
             // let batch = time_query(keys, || ph.index_batch_exact::<A, false>(keys));
@@ -622,7 +610,7 @@ fn query_throughput() {
         params: PtrHashParams<impl BucketFn>,
         rs: &mut Vec<QueryResult>,
     ) {
-        type MyPtrHash<BF, R> = PtrHash<u64, BF, R, StrongerIntHash, Vec<u8>>;
+        type MyPtrHash<BF, R> = PtrHash<u64, BF, R, StrongerIntHash, Vec<u8>, false, true>;
         eprintln!("Building {params:?}");
         // Construct on 6 threads.
         let (ph, c6) = time(|| MyPtrHash::<_, R>::new(&keys, params));
@@ -702,10 +690,12 @@ fn query_throughput() {
             rs.push(r.clone());
 
             const A: usize = 32;
-            let stream_phf =
-                time_query_parallel(threads, keys, |keys| ph.index_stream::<A, false, _>(keys));
-            let stream_mphf =
-                time_query_parallel(threads, keys, |keys| ph.index_stream::<A, true, _>(keys));
+            let stream_phf = time_query_parallel(threads, keys, |keys| {
+                ph.index_stream_maybe_remap::<A, false, _>(keys)
+            });
+            let stream_mphf = time_query_parallel(threads, keys, |keys| {
+                ph.index_stream_maybe_remap::<A, true, _>(keys)
+            });
 
             rs.push(QueryResult {
                 batch_size: A,
@@ -736,7 +726,7 @@ fn string_queries() {
         params: PtrHashParams<impl BucketFn>,
         rs: &mut Vec<QueryResult>,
     ) {
-        type MyPtrHash<BF, R, K, H> = PtrHash<K, BF, R, H, Vec<u8>>;
+        type MyPtrHash<BF, R, K, H> = PtrHash<K, BF, R, H, Vec<u8>, false, true>;
         eprintln!("Building {params:?}");
         // Construct on 6 threads.
         let (ph, c6) = time(|| MyPtrHash::<_, R, K, H>::new(&keys, params));
@@ -796,7 +786,7 @@ fn string_queries() {
         rs.push(r.clone());
 
         const A: usize = 32;
-        let stream_mphf = time_query(keys, || ph.index_stream::<A, true, _>(keys));
+        let stream_mphf = time_query(keys, || ph.index_stream_maybe_remap::<A, true, _>(keys));
 
         rs.push(QueryResult {
             batch_size: A,

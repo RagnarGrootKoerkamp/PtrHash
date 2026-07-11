@@ -54,8 +54,8 @@ impl clap::ValueEnum for Sharding {
     }
 }
 
-impl<Key: KeyT + ?Sized, BF: BucketFn, F: Packed, Hx: KeyHasher<Key>>
-    PtrHash<Key, BF, F, Hx, Vec<u8>>
+impl<Key: KeyT + ?Sized, BF: BucketFn, F: Packed, Hx: KeyHasher<Key>, const SINGLE_PART: bool, const REMAP: bool>
+    PtrHash<Key, BF, F, Hx, Vec<u8>, SINGLE_PART, REMAP>
 {
     /// Return an iterator over the Vec of hashes of each shard.
     pub(crate) fn shards<'a>(

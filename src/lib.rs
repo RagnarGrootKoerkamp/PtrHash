@@ -7,7 +7,8 @@
 //! PtrHash was developed for large key sets of at least 1 million keys, and has been tested up to `10^11` keys.
 //! In the default configuration, it uses 3.0 bits per key.
 //!
-//! It can also be used for smaller sets. In this case, the space efficiency will be somewhat less due.
+//! It can also be used for arbitrary small sets.
+//! In this case, the space efficiency will be less due to a relatively large constant overhead.
 //!
 //! See the GitHub [readme](https://github.com/ragnargrootkoerkamp/ptrhash)
 //! or paper ([arXiv](https://arxiv.org/abs/2502.15539), [blog version](https://curiouscoding.nl/posts/ptrhash/))
@@ -34,22 +35,22 @@
 //! let idx = mphf.index(&key);
 //! assert!(idx < n);
 //!
-//! // Get the non-minimal index of a key.
-//! // Can be slightly faster returns keys up to `n/alpha ~ 1.01*n`.
-//! let idx = mphf.index_no_remap(&key);
-//! // `max_index` returns an upper bound on the non-remapped index.
+//! // Get the index of a key by using PtrHash.
+//! let idx = mphf.index(&key);
+//! // When REMAP=true, this is in `0..n`.
+//! // When REMAP=false, this is in `0..n/alpha ~ 1.01*n`.
+//! // Either way, `max_index` returns an upper bound on the index:
 //! assert!(idx < mphf.max_index());
 //!
 //! // An iterator over the indices of the keys.
 //! // 32: number of iterations ahead to prefetch.
-//! // true: remap to a minimal key in [0, n).
 //! // _: placeholder to infer the type of keys being iterated.
-//! let indices = mphf.index_stream::<32, true, _>(&keys);
+//! let indices = mphf.index_stream::<32, _>(&keys);
 //! assert_eq!(indices.sum::<usize>(), (n * (n - 1)) / 2);
 //!
 //! // Query a batch of keys.
 //! let keys = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15];
-//! let mut indices = mphf.index_batch::<16, true, _>(keys);
+//! let mut indices = mphf.index_batch::<16, _>(keys);
 //! indices.sort();
 //! for i in 0..indices.len()-1 {
 //!     assert!(indices[i] != indices[i+1]);
@@ -88,14 +89,13 @@
 //!
 //! ## Partitioning
 //!
-//! By default, PtrHash partitions the keys into multiple parts.
-//! This speeds up construction in two ways:
-//! - smaller parts have better cache locality, and
-//! - parts can be constructed in parallel.
+//! By default, PtrHash builds all keys as a single part.
 //!
-//! However, at query time there is a small overhead to compute the part of each key.
-//! To achieve slightly faster queries, set [`PtrHashParams::single_part`] to `true`,
-//! and then use [`PtrHash::index_single_part()`] instead of [`PtrHash::index()`].
+//! Faster multi-threaded construction is possible using `SINGLE_PART=false`,
+//! which splits the keys over multiple parts.
+//! Additionally, having fewer keys per part improves the cache-locality of the construction.
+//! Query time is slightly slower though, since computing the part and index
+//! inside the part are two separate steps.
 //!
 //! ## Sharding
 //!
@@ -182,8 +182,6 @@ use crate::{hash::*, pack::Packed, reduce::*, util::log_duration};
 #[cfg_attr(feature = "epserde", derive(epserde::prelude::Epserde))]
 #[cfg_attr(feature = "epserde", deep_copy)]
 pub struct PtrHashParams<BF> {
-    /// Set to false to disable remapping to a minimal PHF.
-    pub remap: bool,
     /// Use `n/alpha` slots approximately.
     pub alpha: f64,
     /// Use average bucket size lambda.
@@ -196,12 +194,6 @@ pub struct PtrHashParams<BF> {
     /// When true, write each shard to a file instead of iterating multiple
     /// times.
     pub sharding: Sharding,
-
-    /// Force using a single part, so that [`PtrHash::index_single_part()`] can be used.
-    ///
-    /// Useful when there are not so many (say <1M or <10M) keys)
-    /// This slows down construction (more for larger inputs), but can make queries up to 30% faster.
-    pub single_part: bool,
 }
 
 impl PtrHashParams<Linear> {
@@ -214,13 +206,11 @@ impl PtrHashParams<Linear> {
     ///
     pub fn default_fast() -> Self {
         Self {
-            remap: true,
             alpha: 0.99,
             lambda: 3.0,
             bucket_fn: Linear,
             keys_per_shard: 1 << 31,
             sharding: Sharding::None,
-            single_part: false,
         }
     }
 }
@@ -229,13 +219,11 @@ impl PtrHashParams<Linear> {
 impl PtrHashParams<SquareEps> {
     pub fn default_square() -> Self {
         Self {
-            remap: true,
             alpha: 0.99,
             lambda: 3.5,
             bucket_fn: SquareEps,
             keys_per_shard: 1 << 31,
             sharding: Sharding::None,
-            single_part: false,
         }
     }
 }
@@ -250,32 +238,28 @@ impl PtrHashParams<CubicEps> {
     /// - `bucket_fn=CubicEps`
     pub fn default_balanced() -> Self {
         Self {
-            remap: true,
             alpha: 0.99,
             lambda: 3.5,
             bucket_fn: CubicEps,
             keys_per_shard: 1 << 31,
             sharding: Sharding::None,
-            single_part: false,
         }
     }
 
     /// Default 'compact' parameters.
     ///
     /// Takes `2.1` bits/key, but is typically 2x slower to construct than the default version.
-    /// This occasionally fails construction. If so, try again with decreased `lambda`.
+    /// If construction fails, try again with decreased `lambda`.
     /// - `alpha=0.99`
-    /// - `lambda=4.0`
+    /// - `lambda=3.9`
     /// - `bucket_fn=CubicEps`
     pub fn default_compact() -> Self {
         Self {
-            remap: true,
             alpha: 0.99,
             lambda: 3.9,
             bucket_fn: CubicEps,
             keys_per_shard: 1 << 31,
             sharding: Sharding::None,
-            single_part: false,
         }
     }
 }
@@ -287,14 +271,36 @@ impl Default for PtrHashParams<Linear> {
     }
 }
 
-/// Type alias to simplify construction.
+/// Fastest variant: a **non-minimal** PHF that **may return values slightly larger than n**. 2.67 bits/key.
 ///
-/// [`PtrHash`] has a large number of generics, partly to support epserde.
-/// [`DefaultPtrHash`] fills in most values.
+/// This skips remapping values into `[0, n)`, and instead returns values up to [`PtrHash::max_index()`].
 ///
-/// Use this as [`DefaultPtrHash::new`] or `<DefaultPtrHash>::new`.
-pub type DefaultPtrHash<Hx = hash::FastIntHash, Key = u64, BF = bucket_fn::Linear> =
-    PtrHash<Key, BF, Vec<u32>, Hx, Vec<u8>>;
+/// Use as [`FastPtrHash::<Hasher, _>::new(&keys, PtrHashParams::default())`].
+pub type FastPtrHash<Hx = hash::FastIntHash, Key = u64> =
+    PtrHash<Key, bucket_fn::Linear, Vec<u32>, Hx, Vec<u8>, true, false>;
+
+/// Default variant: a minimal PHF that returns values in `[0, n)`. 3.0 bits/key.
+///
+/// Use as [`<DefaultPtrHash<Hasher>>::new(&keys, PtrHashParams::default())`].
+pub type DefaultPtrHash<Hx = hash::FastIntHash, Key = u64> =
+    PtrHash<Key, bucket_fn::Linear, Vec<u32>, Hx, Vec<u8>, true, true>;
+
+/// Variant for large data sets with multi-threaded construction. 2.1 bits/key.
+///
+/// This version optimizes space usage rathen than query speed:
+/// - Uses multiple parts to allow multi-threaded construction.
+/// - Uses the `CubicEps` bucket function to reduce space usage.
+/// - Remaps keys into `[0, n)` to achieve a minimal PHF.
+///
+/// This uses 2.1 bits/key with EliasFano, and 2.3 bits/key otherwise.
+///
+/// Use as [`<CompactPtrHash<Hasher>>::new(&keys, PtrHashParams::default_compact())`].
+#[cfg(feature = "elias-fano")]
+pub type CompactPtrHash<Hx = hash::FastIntHash, Key = u64> =
+    PtrHash<Key, bucket_fn::CubicEps, pack::EliasFano, Hx, Vec<u8>, false, true>;
+#[cfg(not(feature = "elias-fano"))]
+pub type CompactPtrHash<Hx = hash::FastIntHash, Key = u64> =
+    PtrHash<Key, bucket_fn::CubicEps, Vec<u32>, Hx, Vec<u8>, false, true>;
 
 /// Trait that keys must satisfy.
 pub trait KeyT: Send + Sync + std::hash::Hash {}
@@ -317,6 +323,8 @@ type PilotHash = u64;
 ///       `hash::StringHash` (using `gxhash`) for strings, or `hash::StringHash128` when the number of string keys is very
 ///       large.
 /// - `V`: The pilots type. Usually `Vec<u8>`, or `&[u8]` for Epserde.
+/// - `SINGLE_PART`: Whether to use single-part optimization (default: true).
+/// - `REMAP`: Whether to build and use remapping (default: true).
 #[cfg_attr(feature = "epserde", derive(epserde::prelude::Epserde))]
 #[derive(Clone, MemSize)]
 pub struct PtrHash<
@@ -325,6 +333,8 @@ pub struct PtrHash<
     F: Packed = Vec<u32>,
     Hx: KeyHasher<Key> = hash::FastIntHash,
     V: AsRef<[u8]> = Vec<u8>,
+    const SINGLE_PART: bool = true,
+    const REMAP: bool = true,
 > {
     params: PtrHashParams<BF>,
 
@@ -371,8 +381,14 @@ pub struct PtrHash<
 }
 
 /// An empty PtrHash instance. Mostly useless, but may be convenient.
-impl<Key: KeyT, BF: BucketFn, F: MutPacked, Hx: KeyHasher<Key>> Default
-    for PtrHash<Key, BF, F, Hx, Vec<u8>>
+impl<
+        Key: KeyT,
+        BF: BucketFn,
+        F: MutPacked,
+        Hx: KeyHasher<Key>,
+        const SINGLE_PART: bool,
+        const REMAP: bool,
+    > Default for PtrHash<Key, BF, F, Hx, Vec<u8>, SINGLE_PART, REMAP>
 where
     PtrHashParams<BF>: Default,
 {
@@ -403,7 +419,15 @@ where
 }
 
 /// Construction methods taking a list of keys.
-impl<Key: KeyT, BF: BucketFn, F: MutPacked, Hx: KeyHasher<Key>> PtrHash<Key, BF, F, Hx, Vec<u8>> {
+impl<
+        Key: KeyT,
+        BF: BucketFn,
+        F: MutPacked,
+        Hx: KeyHasher<Key>,
+        const SINGLE_PART: bool,
+        const REMAP: bool,
+    > PtrHash<Key, BF, F, Hx, Vec<u8>, SINGLE_PART, REMAP>
+{
     /// Create a new PtrHash instance from the given keys.
     ///
     /// Use `<PtrHash>::new()` or `DefaultPtrHash::new()` instead of simply `PtrHash::new()` to
@@ -443,8 +467,14 @@ impl<Key: KeyT, BF: BucketFn, F: MutPacked, Hx: KeyHasher<Key>> PtrHash<Key, BF,
 }
 
 /// Construction (helper) methods working with unsized keys.
-impl<Key: KeyT + ?Sized, BF: BucketFn, F: MutPacked, Hx: KeyHasher<Key>>
-    PtrHash<Key, BF, F, Hx, Vec<u8>>
+impl<
+        Key: KeyT + ?Sized,
+        BF: BucketFn,
+        F: MutPacked,
+        Hx: KeyHasher<Key>,
+        const SINGLE_PART: bool,
+        const REMAP: bool,
+    > PtrHash<Key, BF, F, Hx, Vec<u8>, SINGLE_PART, REMAP>
 {
     /// Same as `new` above, but takes a `ParallelIterator` over keys instead of a slice.
     ///
@@ -465,15 +495,15 @@ impl<Key: KeyT + ?Sized, BF: BucketFn, F: MutPacked, Hx: KeyHasher<Key>>
     fn init(n: usize, mut params: PtrHashParams<BF>) -> Self {
         // assert!(n < (1 << 40), "Number of keys must be less than 2^40.");
 
-        let shards = match (params.single_part, params.sharding) {
-            (true, _) => 1,
+        let shards = match (SINGLE_PART, params.sharding) {
             (_, Sharding::None) => 1,
+            (true, _) => panic!("Sharding does not work in combination with SINGLE_PART=true."),
             _ => n.div_ceil(params.keys_per_shard),
         };
 
         // Formula of Vigna, eps-cost-sharding: https://arxiv.org/abs/2503.18397
         // (1-alpha)/2, so that on average we still have some room to play with.
-        let parts = if params.single_part {
+        let parts = if SINGLE_PART {
             1
         } else {
             let eps = (1.0 - params.alpha) / 2.0;
@@ -636,7 +666,7 @@ impl<Key: KeyT + ?Sized, BF: BucketFn, F: MutPacked, Hx: KeyHasher<Key>>
             self.n
         );
 
-        if !self.params.remap || self.slots_total == self.n {
+        if !REMAP || self.slots_total == self.n {
             return Ok(());
         }
 
@@ -663,8 +693,15 @@ impl<Key: KeyT + ?Sized, BF: BucketFn, F: MutPacked, Hx: KeyHasher<Key>>
 }
 
 /// Indexing methods.
-impl<Key: KeyT + ?Sized, BF: BucketFn, F: Packed, Hx: KeyHasher<Key>, V: AsRef<[u8]>>
-    PtrHash<Key, BF, F, Hx, V>
+impl<
+        Key: KeyT + ?Sized,
+        BF: BucketFn,
+        F: Packed,
+        Hx: KeyHasher<Key>,
+        V: AsRef<[u8]>,
+        const SINGLE_PART: bool,
+        const REMAP: bool,
+    > PtrHash<Key, BF, F, Hx, V, SINGLE_PART, REMAP>
 {
     /// Return the number of bits per element used for the pilots (`.0`) and the
     /// remapping (`.1`).
@@ -678,68 +715,70 @@ impl<Key: KeyT + ?Sized, BF: BucketFn, F: Packed, Hx: KeyHasher<Key>, V: AsRef<[
         self.n
     }
 
-    /// `self.index_no_remap()` always returns below this bound.
-    /// Should be around `n/alpha ~ 1.01*n`.
+    /// `self.index()` always returns below this bound.
+    /// Around `n/alpha ~ 1.01*n` when `REMAP=false`, or `n` when `REMAP=true`.
     pub fn max_index(&self) -> usize {
-        self.slots_total
+        if REMAP {
+            self.n
+        } else {
+            self.slots_total
+        }
     }
 
     pub fn slots_per_part(&self) -> usize {
         self.slots
     }
 
-    /// Get the index for `key` in `[0, n)`.
+    /// Get the index for `key`.
+    ///
+    /// When `REMAP` is true, returns an index in `[0, n)`.
+    /// When `REMAP` is false, returns a non-minimal index in `[0, self.max_index())`.
+    ///
+    /// When `SINGLE_PART` is true, this uses slightly faster single-part hashing.
     #[inline(always)]
     pub fn index(&self, key: &Key) -> usize {
         let slot = self.index_no_remap(key);
-        if slot < self.n {
-            slot
+
+        if REMAP {
+            if slot < self.n {
+                slot
+            } else {
+                self.remap.index(slot - self.n) as usize
+            }
         } else {
-            self.remap.index(slot - self.n) as usize
+            slot
         }
     }
 
-    /// Get a non-minimal index of the given key, in `[0, n/alpha)`.
-    /// Use `index` to get a key in `[0, n)`.
+    /// Get the non-remapped index for `key`, regardless of `REMAP`.
+    ///
+    /// When `SINGLE_PART` is true, uses slightly faster single-part hashing.
+    #[doc(hidden)]
     #[inline(always)]
     pub fn index_no_remap(&self, key: &Key) -> usize {
-        let hx = self.hash_key(key);
-        let b = self.bucket(hx);
-        let pilot = self.pilots.as_ref().index(b);
-        self.slot(hx, pilot)
-    }
-
-    /// Faster version of `index` for when there is only a single part.
-    /// Use only when there is indeed a single part, i.e., after constructing
-    /// with [`PtrHashParams::single_part`] set to `true`.
-    #[inline(always)]
-    pub fn index_single_part(&self, key: &Key) -> usize {
-        #[cfg(debug_assertions)]
-        assert_eq!(self.parts, 1);
-
-        let slot = self.index_single_part_no_remap(key);
-        if slot < self.n {
-            slot
-        } else {
-            self.remap.index(slot - self.n) as usize
+        if SINGLE_PART {
+            debug_assert_eq!(self.parts, 1);
         }
-    }
 
-    /// Faster version of `index` for when there is only a single part, without remapping.
-    /// Use only when there is indeed a single part, i.e., after constructing
-    /// with [`PtrHashParams::single_part`] set to `true`.
-    #[inline(always)]
-    pub fn index_single_part_no_remap(&self, key: &Key) -> usize {
         let hx = self.hash_key(key);
-        let b = self.bucket_in_part(hx.high());
-        let pilot = self.pilots.as_ref().index(b);
-        self.slot_in_part(hx, pilot)
+        let slot = if SINGLE_PART {
+            let b = self.bucket_in_part(hx.high());
+            let pilot = self.pilots.as_ref().index(b);
+            self.slot_in_part(hx, pilot)
+        } else {
+            let b = self.bucket(hx);
+            let pilot = self.pilots.as_ref().index(b);
+            self.slot(hx, pilot)
+        };
+
+        slot
     }
 
     /// Takes an iterator over keys and returns an iterator over the indices of the keys.
     ///
     /// Uses a buffer of size `B` for prefetching ahead. `B=32` should be a good choice.
-    /// By default, set `MINIMAL` to false when you do not need remapp
+    /// When `REMAP` is true (the default), returns minimal indices in `[0, n)`.
+    /// When `REMAP` is false, returns non-minimal indices in `[0, n/alpha)`.
     /// The iterator can return either `Q=Key` or `Q=&Key`.
     ///
     /// See the module-level documentation for an example.
@@ -747,7 +786,22 @@ impl<Key: KeyT + ?Sized, BF: BucketFn, F: Packed, Hx: KeyHasher<Key>, V: AsRef<[
     // parallel, but this is complicated, since SIMD doesn't support the
     // 64x64->128 multiplications needed in bucket/slot computations.
     #[inline]
-    pub fn index_stream<'a, const B: usize, const MINIMAL: bool, Q: Borrow<Key> + 'a>(
+    pub fn index_stream<'a, const B: usize, Q: Borrow<Key> + 'a>(
+        &'a self,
+        keys: impl IntoIterator<Item = Q> + 'a,
+    ) -> impl Iterator<Item = usize> + 'a {
+        self.index_stream_maybe_remap::<B, REMAP, _>(keys)
+    }
+
+    /// Version that allows disabling remapping.
+    #[doc(hidden)]
+    #[inline]
+    pub fn index_stream_maybe_remap<
+        'a,
+        const B: usize,
+        const QUERY_REMAP: bool,
+        Q: Borrow<Key> + 'a,
+    >(
         &'a self,
         keys: impl IntoIterator<Item = Q> + 'a,
     ) -> impl Iterator<Item = usize> + 'a {
@@ -778,7 +832,6 @@ impl<Key: KeyT + ?Sized, BF: BucketFn, F: Packed, Hx: KeyHasher<Key>, V: AsRef<[
         struct It<
             'a,
             const B: usize,
-            const MINIMAL: bool,
             Key: KeyT + ?Sized,
             Q: Borrow<Key> + 'a,
             KeyIt: Iterator<Item = Q> + 'a,
@@ -786,8 +839,11 @@ impl<Key: KeyT + ?Sized, BF: BucketFn, F: Packed, Hx: KeyHasher<Key>, V: AsRef<[
             F: Packed,
             Hx: KeyHasher<Key>,
             V: AsRef<[u8]>,
+            const SINGLE_PART: bool,
+            const REMAP: bool,
+            const QUERY_REMAP: bool,
         > {
-            ph: &'a PtrHash<Key, BF, F, Hx, V>,
+            ph: &'a PtrHash<Key, BF, F, Hx, V, SINGLE_PART, REMAP>,
             keys: KeyIt,
             next_hashes: [Hx::H; B],
             next_buckets: [usize; B],
@@ -797,7 +853,6 @@ impl<Key: KeyT + ?Sized, BF: BucketFn, F: Packed, Hx: KeyHasher<Key>, V: AsRef<[
         impl<
                 'a,
                 const B: usize,
-                const MINIMAL: bool,
                 Key: KeyT + ?Sized,
                 Q: Borrow<Key> + 'a,
                 KeyIt: Iterator<Item = Q> + 'a,
@@ -805,7 +860,10 @@ impl<Key: KeyT + ?Sized, BF: BucketFn, F: Packed, Hx: KeyHasher<Key>, V: AsRef<[
                 F: Packed,
                 Hx: KeyHasher<Key>,
                 V: AsRef<[u8]>,
-            > Iterator for It<'a, B, MINIMAL, Key, Q, KeyIt, BF, F, Hx, V>
+                const SINGLE_PART: bool,
+                const REMAP: bool,
+                const QUERY_REMAP: bool,
+            > Iterator for It<'a, B, Key, Q, KeyIt, BF, F, Hx, V, SINGLE_PART, REMAP, QUERY_REMAP>
         {
             type Item = usize;
             fn next(&mut self) -> Option<usize> {
@@ -832,7 +890,7 @@ impl<Key: KeyT + ?Sized, BF: BucketFn, F: Packed, Hx: KeyHasher<Key>, V: AsRef<[
                     let pilot = self.ph.pilots.as_ref().index(cur_bucket);
                     let slot = self.ph.slot(cur_hash, pilot);
 
-                    let slot = if MINIMAL && slot >= self.ph.n {
+                    let slot = if QUERY_REMAP && slot >= self.ph.n {
                         self.ph.remap.index(slot - self.ph.n) as usize
                     } else {
                         slot
@@ -849,7 +907,7 @@ impl<Key: KeyT + ?Sized, BF: BucketFn, F: Packed, Hx: KeyHasher<Key>, V: AsRef<[
                     let pilot = self.ph.pilots.as_ref().index(cur_bucket);
                     let slot = self.ph.slot(cur_hash, pilot);
 
-                    let slot = if MINIMAL && slot >= self.ph.n {
+                    let slot = if REMAP && slot >= self.ph.n {
                         self.ph.remap.index(slot - self.ph.n) as usize
                     } else {
                         slot
@@ -862,7 +920,7 @@ impl<Key: KeyT + ?Sized, BF: BucketFn, F: Packed, Hx: KeyHasher<Key>, V: AsRef<[
                 accum
             }
         }
-        It::<B, MINIMAL, _, _, _, _, _, _, _> {
+        It::<B, _, _, _, _, _, _, _, SINGLE_PART, REMAP, QUERY_REMAP> {
             ph: self,
             keys,
             next_hashes,
@@ -875,7 +933,7 @@ impl<Key: KeyT + ?Sized, BF: BucketFn, F: Packed, Hx: KeyHasher<Key>, V: AsRef<[
     ///
     /// Input can be either `[Key; K]` or `[&Key; K]`.
     #[inline]
-    pub fn index_batch<'a, const K: usize, const MINIMAL: bool, Q: Borrow<Key> + 'a>(
+    pub fn index_batch<'a, const K: usize, Q: Borrow<Key> + 'a>(
         &'a self,
         xs: [Q; K],
     ) -> [usize; K] {
@@ -893,7 +951,7 @@ impl<Key: KeyT + ?Sized, BF: BucketFn, F: Packed, Hx: KeyHasher<Key>, V: AsRef<[
             move |idx| {
                 let pilot = self.pilots.as_ref().index(buckets[idx]);
                 let slot = self.slot(hashes[idx], pilot);
-                if MINIMAL && slot >= self.n {
+                if REMAP && slot >= self.n {
                     self.remap.index(slot - self.n) as usize
                 } else {
                     slot
@@ -910,7 +968,7 @@ impl<Key: KeyT + ?Sized, BF: BucketFn, F: Packed, Hx: KeyHasher<Key>, V: AsRef<[
     #[doc(hidden)]
     #[cfg(feature = "unstable")]
     #[inline]
-    pub fn index_batch_exact<'a, const K: usize, const MINIMAL: bool>(
+    pub fn index_batch_exact<'a, const K: usize>(
         &'a self,
         xs: impl IntoIterator<Item = &'a Key> + 'a,
     ) -> impl Iterator<Item = usize> + 'a {
@@ -931,7 +989,7 @@ impl<Key: KeyT + ?Sized, BF: BucketFn, F: Packed, Hx: KeyHasher<Key>, V: AsRef<[
                     move |idx| {
                         let pilot = self.pilots.as_ref().index(buckets[idx]);
                         let slot = self.slot(hx[idx], pilot);
-                        if MINIMAL && slot >= self.n {
+                        if REMAP && slot >= self.n {
                             self.remap.index(slot - self.n) as usize
                         } else {
                             slot
@@ -955,7 +1013,7 @@ impl<Key: KeyT + ?Sized, BF: BucketFn, F: Packed, Hx: KeyHasher<Key>, V: AsRef<[
     /// Somehow the version above has pretty constant speed regardless of K.
     #[doc(hidden)]
     #[inline]
-    pub fn index_batch_exact2<'a, const K: usize, const MINIMAL: bool>(
+    pub fn index_batch_exact2<'a, const K: usize, const QUERY_REMAP: bool>(
         &'a self,
         xs: impl IntoIterator<Item = &'a Key, IntoIter: ExactSizeIterator> + 'a,
     ) -> impl Iterator<Item = usize> + 'a {
@@ -989,7 +1047,7 @@ impl<Key: KeyT + ?Sized, BF: BucketFn, F: Packed, Hx: KeyHasher<Key>, V: AsRef<[
             idx += 1;
 
             // Remap?
-            if MINIMAL && slot >= self.n {
+            if QUERY_REMAP && slot >= self.n {
                 self.remap.index(slot - self.n) as usize
             } else {
                 slot
