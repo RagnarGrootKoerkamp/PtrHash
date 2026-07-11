@@ -74,13 +74,13 @@ design of PtrHash makes little sense and faster queries might be possible.)
 
 See [docs.rs](https://docs.rs/ptr_hash) for the different variants and parameters.
 Below, we use `PtrHashParams::default()` for a reasonable trade-off between size
-(2.4 bits/key) and speed.
-Slightly smaller size is possible using `PtrHashParams::default_compact()`,
+(3.0 bits/key) and speed.
+Slightly smaller size (2.15 bits/key) is possible using `CompactPtrHash` with `PtrHashParams::default_compact()`,
 at the cost of significantly slower construction time (2x) and lowered reliability.
 
-There is also `PtrHashParams::default_fast()`, which takes 25% more space but
-can be almost 2x faster when querying integer keys in tight loops. Nevertheless,
-for large inputs, maximum query throughput is achieved with `index_stream` with default parameters.
+There is also `PtrHashParams::default_fast()`, which takes 2.67 bits/key but
+can be almost 2x faster than the compact variant when querying integer keys in tight loops.
+For large inputs, maximum query throughput is achieved with `index_stream` with default parameters.
 
 ```rust
 use ptr_hash::{PtrHash, PtrHashParams};
