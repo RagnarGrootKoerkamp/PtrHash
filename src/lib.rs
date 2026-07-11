@@ -76,9 +76,9 @@
 //!
 //! ## Default configurations
 //!
-//! - For fastest query throughput, use [`FastPtrHash`], which is a non-minimal PHF that skips remapping values into `[0, n)`.
-//! - If you want a minimal PHF that returns values in `[0, n)`, use [`DefaultPtrHash`].
-//! - If you have many keys, use [`CompactPtrHash`], which allows for multi-threaded construction
+//! - For fastest query throughput, use [`FastPtrHash`] (2.67 bits/key), which is a non-minimal PHF that skips remapping values into `[0, n)`.67 bits/key.
+//! - If you want a minimal PHF that returns values in `[0, n)`, use [`DefaultPtrHash`] (3.0 bits/key).
+//! - If you have many keys, use [`CompactPtrHash`] (2.15 bits/key), which allows for multi-threaded construction
 //!   by splitting the input into multiple parts and uses a more space-efficient bucket function.
 //!   Queries will be a bit slower because the part and index inside the part are computed separately.
 //!   `PtrHashParams::default_balanced()` is smaller and still fast to construct, while
@@ -268,7 +268,7 @@ impl PtrHashParams<CubicEps> {
 
     /// Default 'compact' parameters.
     ///
-    /// Takes `2.1` bits/key, but is typically 2x slower to construct than the default version.
+    /// Takes `2.15` bits/key, but is typically 2x slower to construct than the default version.
     /// If construction fails, try again with decreased `lambda`.
     /// - `alpha=0.99`
     /// - `lambda=3.9`
@@ -295,7 +295,7 @@ impl Default for PtrHashParams<Linear> {
 ///
 /// This skips remapping values into `[0, n)`, and instead returns values up to [`PtrHash::max_index()`].
 ///
-/// Use as [`FastPtrHash::<Hasher, _>::new(&keys, PtrHashParams::default())`].
+/// Use as [`FastPtrHash::<Hasher, _>::new(&keys, PtrHashParams::default_fast())`].
 pub type FastPtrHash<Hx = hash::FastIntHash, Key = u64> =
     PtrHash<Key, bucket_fn::Linear, Vec<u32>, Hx, Vec<u8>, true, false>;
 
@@ -305,14 +305,14 @@ pub type FastPtrHash<Hx = hash::FastIntHash, Key = u64> =
 pub type DefaultPtrHash<Hx = hash::FastIntHash, Key = u64> =
     PtrHash<Key, bucket_fn::Linear, Vec<u32>, Hx, Vec<u8>, true, true>;
 
-/// Variant for large data sets with multi-threaded construction. 2.1 bits/key.
+/// Variant for large data sets with multi-threaded construction. 2.15 bits/key.
 ///
 /// This version optimizes space usage rathen than query speed:
 /// - Uses multiple parts to allow multi-threaded construction.
 /// - Uses the `CubicEps` bucket function to reduce space usage.
 /// - Remaps keys into `[0, n)` to achieve a minimal PHF.
 ///
-/// This uses 2.1 bits/key with EliasFano, and 2.3 bits/key otherwise.
+/// This uses 2.15 bits/key with EliasFano, and 2.35 bits/key otherwise.
 ///
 /// Use as [`<CompactPtrHash<Hasher>>::new(&keys, PtrHashParams::default_compact())`].
 #[cfg(feature = "elias-fano")]
