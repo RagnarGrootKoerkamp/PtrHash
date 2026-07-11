@@ -200,7 +200,7 @@ use crate::{hash::*, pack::Packed, reduce::*, util::log_duration};
 #[derive(Clone, Copy, Debug, MemSize)]
 #[mem_size(flat)]
 #[cfg_attr(feature = "epserde", derive(epserde::prelude::Epserde))]
-#[cfg_attr(feature = "epserde", deep_copy)]
+#[cfg_attr(feature = "epserde", epserde(deep_copy))]
 pub struct PtrHashParams<BF> {
     /// Use `n/alpha` slots approximately.
     pub alpha: f64,

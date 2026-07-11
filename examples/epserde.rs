@@ -22,27 +22,30 @@ fn main() {
     let path = "/tmp/test.mphf";
     let mut file = std::fs::File::create(path).unwrap();
     eprintln!("\nSerializing to {path}..");
-    mphf.serialize(&mut file).unwrap();
+    unsafe { mphf.serialize(&mut file).unwrap() };
     let len = file.metadata().unwrap().len();
     eprintln!("Size: {len}, bits/key: {}\n", len as f32 * 8. / n as f32);
 
     // Deserialize full PtrHash
-    // eprintln!("load full, without epserde..");
-    // let mphf2 = <PtrHash>::deserialize_full(&mut std::fs::File::open(path).unwrap()).unwrap();
+    eprintln!("load full, without epserde..");
+    let _mphf2 =
+        unsafe { PtrHashXxh3::deserialize_full(&mut std::fs::File::open(path).unwrap()).unwrap() };
 
     // Ep-serde from memory.
-    // eprintln!("Load into memory, with epserde..");
-    // let mphf2 = <PtrHash>::load_mem(path).unwrap();
+    eprintln!("Load into memory, with epserde..");
+    let _mphf2 = unsafe { PtrHashXxh3::load_mem(path).unwrap().uncase() };
 
     // Ep-serde from mmap.
     eprintln!("Load into mmap, with epserde..");
-    let mphf2 =
-        PtrHashXxh3::load_mmap(path, Flags::RANDOM_ACCESS | Flags::TRANSPARENT_HUGE_PAGES).unwrap();
+    let mem_case = unsafe {
+        PtrHashXxh3::load_mmap(path, Flags::RANDOM_ACCESS | Flags::TRANSPARENT_HUGE_PAGES).unwrap()
+    };
+    let mphf2 = mem_case.uncase();
 
     // Ep-serde from manually read memory.
     // May fail because we require 64-byte alignment, and `fs::read` is not guaranteed to give that.
-    // let b = std::fs::read(path).unwrap();
-    // let mphf2 = <PtrHash>::deserialize_eps(b.as_ref()).unwrap();
+    let b = std::fs::read(path).unwrap();
+    let _mphf2 = unsafe { PtrHashXxh3::deserialize_eps(b.as_ref()).unwrap() };
 
     eprintln!("Testing..");
     // Get the minimal index of a key.

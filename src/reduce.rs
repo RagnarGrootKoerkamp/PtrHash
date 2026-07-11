@@ -23,8 +23,7 @@ pub trait Reduce: Copy + Sync + std::fmt::Debug {
 #[derive(Copy, Clone, Debug, MemSize)]
 #[mem_size(flat)]
 #[cfg_attr(feature = "epserde", derive(epserde::prelude::Epserde))]
-#[cfg_attr(feature = "epserde", repr(C))]
-#[cfg_attr(feature = "epserde", zero_copy)]
+#[cfg_attr(feature = "epserde", epserde(deep_copy))]
 pub struct FastReduce {
     d: u64,
 }
@@ -47,8 +46,7 @@ impl Reduce for FastReduce {
 #[derive(Copy, Clone, Debug, MemSize)]
 #[mem_size(flat)]
 #[cfg_attr(feature = "epserde", derive(epserde::prelude::Epserde))]
-#[cfg_attr(feature = "epserde", repr(C))]
-#[cfg_attr(feature = "epserde", zero_copy)]
+#[cfg_attr(feature = "epserde", epserde(deep_copy))]
 #[allow(unused)]
 pub struct MulReduce {
     mask: u64,

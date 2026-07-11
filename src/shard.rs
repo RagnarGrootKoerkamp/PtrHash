@@ -15,8 +15,7 @@ use super::*;
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default, MemSize)]
 #[mem_size(flat)]
 #[cfg_attr(feature = "epserde", derive(epserde::prelude::Epserde))]
-#[cfg_attr(feature = "epserde", repr(C))]
-#[cfg_attr(feature = "epserde", zero_copy)]
+#[cfg_attr(feature = "epserde", epserde(deep_copy))]
 pub enum Sharding {
     /// Process all hashes as a single Vec in memory.
     #[default]
@@ -54,8 +53,14 @@ impl clap::ValueEnum for Sharding {
     }
 }
 
-impl<Key: KeyT + ?Sized, BF: BucketFn, F: Packed, Hx: KeyHasher<Key>, const SINGLE_PART: bool, const REMAP: bool>
-    PtrHash<Key, BF, F, Hx, Vec<u8>, SINGLE_PART, REMAP>
+impl<
+        Key: KeyT + ?Sized,
+        BF: BucketFn,
+        F: Packed,
+        Hx: KeyHasher<Key>,
+        const SINGLE_PART: bool,
+        const REMAP: bool,
+    > PtrHash<Key, BF, F, Hx, Vec<u8>, SINGLE_PART, REMAP>
 {
     /// Return an iterator over the Vec of hashes of each shard.
     pub(crate) fn shards<'a>(

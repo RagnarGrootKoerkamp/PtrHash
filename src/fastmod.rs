@@ -17,6 +17,7 @@ fn mul128_u64(lowbits: u128, d: u64) -> u64 {
 #[derive(Copy, Clone, Debug, MemSize)]
 #[mem_size(flat)]
 #[cfg_attr(feature = "epserde", derive(epserde::prelude::Epserde))]
+#[cfg_attr(feature = "epserde", epserde(deep_copy))]
 #[allow(unused)]
 pub struct FM64 {
     d: u64,
@@ -40,6 +41,7 @@ impl Reduce for FM64 {
 #[derive(Copy, Clone, Debug, MemSize)]
 #[mem_size(flat)]
 #[cfg_attr(feature = "epserde", derive(epserde::prelude::Epserde))]
+#[cfg_attr(feature = "epserde", epserde(deep_copy))]
 pub struct FM32 {
     d: u64,
     m: u64,
