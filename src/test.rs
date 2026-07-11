@@ -6,10 +6,14 @@ use crate::util::generate_keys;
 /// Construct the MPHF and test all keys are mapped to unique indices.
 #[test]
 fn construct_random() {
-    for n in (0..10).chain([
-        10, 30, 100, 300, 1000, 3000, 10_000, 30_000, 100_000, 300_000, 1_000_000, 3_000_000,
-        10_000_000, 20_000_000, 30_000_000,
-    ]) {
+    #[allow(unused_mut)]
+    let mut ns = vec![
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 30, 100, 300, 1000, 3000, 10_000, 30_000, 100_000,
+        300_000, 1_000_000,
+    ];
+    #[cfg(not(debug_assertions))]
+    ns.extend_from_slice(&[1_000_000, 3_000_000, 10_000_000, 20_000_000, 30_000_000]);
+    for n in (0..10).chain(ns) {
         eprintln!("RANDOM Testing n = {}", n);
         let keys = generate_keys(n);
         let ptr_hash = DefaultPtrHash::<FastIntHash, _>::new(&keys, PtrHashParams::default_fast());
