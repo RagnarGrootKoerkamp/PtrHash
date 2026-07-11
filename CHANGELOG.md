@@ -14,6 +14,9 @@
 - `index_no_remap` and `index_single_part` are now replaced by generics. ([#28](https://github.com/RagnarGrootKoerkamp/ptrhash/issues/28))
 - Add more benchmarks to readme.
 
+## v2.0.0 (yanked)
+- I accidentally released a version with broken `epserde` integration.
+
 ## v2.0.0-alpha.1
 - Breaking: use `fastmod` for `slot_in_part` instead.
 - Use Sebastiano Vigna's formula of the [epsilon-cost-sharding

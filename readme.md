@@ -31,14 +31,14 @@ I'm more than happy to help out with integrating PtrHash.
 
 Space usage and query throughput of a for-loop in ns/key as measured by `examples/query_bench.rs`:
 
-| method         | hash   | bits/key | 100k | 1M  | 10M | 100 M |
-|----------------|--------|----------|------|-----|-----|-------|
-| FastPtrHash    | NoHash | 2.67     | 1.5  | 2.2 | 3.1 | 7.6   |
-| DefaultPtrHash | NoHash | 3.00     | 1.7  | 2.6 | 3.3 | 8.5   |
-| CompactPtrHash | NoHash | 2.15     | 4.4  | 5.5 | 6.8 | 15.6  |
-| FastPtrHash    | FxHash | 2.67     | 1.7  | 2.5 | 3.2 | 8.2   |
-| DefaultPtrHash | FxHash | 3.00     | 2.0  | 2.7 | 3.7 | 9.1   |
-| CompactPtrHash | FxHash | 2.15     | 4.8  | 5.8 | 7.2 | 15.7  |
+| method         | bits/key | hash   | 100k | 1M  | 10M | 100 M |
+|----------------|----------|--------|------|-----|-----|-------|
+| FastPtrHash    | 2.67     | NoHash | 1.5  | 2.2 | 3.1 | 7.6   |
+|                |          | FxHash | 1.7  | 2.5 | 3.2 | 8.2   |
+| DefaultPtrHash | 3.00     | NoHash | 1.7  | 2.6 | 3.3 | 8.5   |
+|                |          | FxHash | 2.0  | 2.7 | 3.7 | 9.1   |
+| CompactPtrHash | 2.15     | NoHash | 4.4  | 5.5 | 6.8 | 15.6  |
+|                |          | FxHash | 4.8  | 5.8 | 7.2 | 15.7  |
 
 
 ## Performance on large input
