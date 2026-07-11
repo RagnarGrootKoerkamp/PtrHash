@@ -12,7 +12,7 @@ use ptr_hash::{
     util::{generate_keys, generate_string_keys},
     KeyT, PtrHash, PtrHashParams, Sharding,
 };
-use rand::{rng, Rng, RngCore};
+use rand::{rng, Rng, RngExt};
 use rayon::iter::IntoParallelIterator;
 use serde::Serialize;
 

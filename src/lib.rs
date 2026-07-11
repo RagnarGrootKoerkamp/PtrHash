@@ -182,7 +182,7 @@ use log::debug;
 use log::trace;
 use mem_dbg::MemSize;
 use pack::MutPacked;
-use rand::{Rng, SeedableRng};
+use rand::{RngExt, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 use rayon::prelude::*;
 pub use shard::Sharding;

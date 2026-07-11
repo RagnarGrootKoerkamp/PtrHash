@@ -3,7 +3,7 @@
 use super::*;
 use colored::Colorize;
 use log::{trace, warn};
-use rand::{rng, Rng};
+use rand::{rng, RngExt};
 use rayon::prelude::*;
 use rdst::RadixSort;
 
