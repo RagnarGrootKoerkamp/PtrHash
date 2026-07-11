@@ -117,14 +117,21 @@ fn construct_multiples() {
     for m in [1, 1 << 40, 1_000_000_000_000, 3u64.pow(23)] {
         #[allow(unused_mut)]
         let mut ns = vec![
-            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 30, 100, 300, 1000, 3000, 10_000, 30_000, 100_000,
+            0usize, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 30, 100, 300, 1000, 3000, 10_000, 30_000,
+            100_000,
         ];
         #[cfg(not(debug_assertions))]
         ns.extend_from_slice(&[1_000_000, 3_000_000, 10_000_000, 20_000_000, 30_000_000]);
 
         for n in ns {
             eprintln!("MULTIPLES OF {m} Testing n = {}", n);
-            let keys = (0..n as u64).map(|i| m * i).collect::<Vec<_>>();
+            let mut keys = (0..n as u64).map(|i| m * i).collect::<Vec<_>>();
+            keys.sort();
+            for i in 0..n.saturating_sub(1) {
+                if keys[i] >= keys[i + 1] {
+                    keys[i + 1] = keys[i] + 1;
+                }
+            }
             let ptr_hash =
                 DefaultPtrHash::<StrongerIntHash, _>::new(&keys, PtrHashParams::default_fast());
             let mut done = bitvec![0; n];
