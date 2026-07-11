@@ -6,9 +6,7 @@
 //!
 //! PtrHash was developed for large key sets of at least 1 million keys, and has been tested up to `10^11` keys.
 //! In the default configuration, it uses 3.0 bits per key.
-//!
-//! It can also be used for arbitrary small sets.
-//! In this case, the space efficiency will be less due to a relatively large constant overhead.
+//! Nevertheless, it can also be used for arbitrary small sets.
 //!
 //! See the GitHub [readme](https://github.com/ragnargrootkoerkamp/ptrhash)
 //! or paper ([arXiv](https://arxiv.org/abs/2502.15539), [blog version](https://curiouscoding.nl/posts/ptrhash/))
@@ -16,7 +14,7 @@
 //!
 //! Usage example:
 //! ```rust
-//! use ptr_hash::{PtrHash, PtrHashParams};
+//! use ptr_hash::PtrHashParams;
 //!
 //! // Enable logging.
 //! env_logger::init();
@@ -25,22 +23,14 @@
 //! let n = 1_000_000;
 //! let keys = ptr_hash::util::generate_keys(n);
 //!
-//! // Build the datastructure.
-//! // This uses [`PtrHashParams::default_fast()`] with linear bucket fn and a `Vec<u32>` for remapping.
-//! // Only if squeezing out every bit is super important to you, consider one of the other variants.
-//! let mphf = <PtrHash>::new(&keys, PtrHashParams::default());
+//! // Build the default variant of the datastructure.
+//! // See `FastPtrHash` and `CompactPtrHash` below as alternatives.
+//! let mphf = <ptr_hash::DefaultPtrHash>::new(&keys, PtrHashParams::default());
 //!
 //! // Get the index of a key.
 //! let key = 0;
 //! let idx = mphf.index(&key);
 //! assert!(idx < n);
-//!
-//! // Get the index of a key by using PtrHash.
-//! let idx = mphf.index(&key);
-//! // When REMAP=true, this is in `0..n`.
-//! // When REMAP=false, this is in `0..n/alpha ~ 1.01*n`.
-//! // Either way, `max_index` returns an upper bound on the index:
-//! assert!(idx < mphf.max_index());
 //!
 //! // An iterator over the indices of the keys.
 //! // 32: number of iterations ahead to prefetch.
@@ -49,8 +39,8 @@
 //! assert_eq!(indices.sum::<usize>(), (n * (n - 1)) / 2);
 //!
 //! // Query a batch of keys.
-//! let keys = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15];
-//! let mut indices = mphf.index_batch::<16, _>(keys);
+//! let query_keys = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15];
+//! let mut indices = mphf.index_batch::<16, _>(query_keys);
 //! indices.sort();
 //! for i in 0..indices.len()-1 {
 //!     assert!(indices[i] != indices[i+1]);
@@ -58,19 +48,48 @@
 //!
 //! // Test that all items map to different indices
 //! let mut taken = vec![false; n];
-//! for key in keys {
+//! for key in &keys {
 //!     let idx = mphf.index(&key);
 //!     assert!(!taken[idx]);
 //!     taken[idx] = true;
 //! }
+//!
+//! // `FastPtrHash` skips remapping and returns values up to `PtrHash::max_index()`,
+//! // which is around 1.01*n.
+//! let phf = <ptr_hash::FastPtrHash>::new(&keys, PtrHashParams::default());
+//!
+//! for key in &keys {
+//!     let idx = mphf.index(&key);
+//!     // NOTE: Not `n` but `phf.max_index()` here!
+//!     assert!(idx < phf.max_index());
+//! }
+//!
+//! // `CompactPtrHash` uses multi-threaded construction and is more space-efficient,
+//! // but slightly slower to query.
+//! let phf = <ptr_hash::CompactPtrHash>::new(&keys, PtrHashParams::default_compact());
+//!
+//! for key in &keys {
+//!     let idx = mphf.index(&key);
+//!     assert!(idx < n);
+//! }
 //! ```
+//!
+//! ## Default configurations
+//!
+//! - For fastest query throughput, use [`FastPtrHash`], which is a non-minimal PHF that skips remapping values into `[0, n)`.
+//! - If you want a minimal PHF that returns values in `[0, n)`, use [`DefaultPtrHash`].
+//! - If you have many keys, use [`CompactPtrHash`], which allows for multi-threaded construction
+//!   by splitting the input into multiple parts and uses a more space-efficient bucket function.
+//!   Queries will be a bit slower because the part and index inside the part are computed separately.
+//!   `PtrHashParams::default_balanced()` is smaller and still fast to construct, while
+//!   `PtrHashParams::default_compact()` is even smaller and around 2x slower to construct.
 //!
 //! ## Hash functions
 //!
 //! PtrHash benefits from using an as-fast-as-possible hash function.
 //!
 //! - If your keys are already random integers, use [`hash::NoHash`].
-//! - For integers, use [`hash::FastIntHash`], which aliases [`hash::FxHash`].
+//! - For integers, use [`hash::FastIntHash`], which aliases the fast-but-weak [`hash::FxHash`]. Otherwise, try [`hash::StrongerIntHash`].
 //! - For strings, use [`hash::StringHash`] when the number of keys is at most `10^9`, and use [`hash::StringHash128`] for more keys. These alias [`hash::Gx`] and [`hash::Gx128`].
 //!
 //! See the [`hash`] module documentation for better hashes in case these cause hash collisions.
@@ -81,7 +100,7 @@
 //! use ptr_hash::{DefaultPtrHash, PtrHashParams, hash::StringHash};
 //!
 //! let keys = vec!["abc", "def"];
-//! let mphf = <DefaultPtrHash<StringHash, _, _>>::new(&keys, PtrHashParams::default());
+//! let mphf = <DefaultPtrHash<StringHash, _>>::new(&keys, PtrHashParams::default());
 //!
 //! let idx = mphf.index(&"def");
 //! # }
@@ -91,7 +110,7 @@
 //!
 //! By default, PtrHash builds all keys as a single part.
 //!
-//! Faster multi-threaded construction is possible using `SINGLE_PART=false`,
+//! Faster multi-threaded construction is possible using `SINGLE_PART=false` (via [`CompactPtrHash`]),
 //! which splits the keys over multiple parts.
 //! Additionally, having fewer keys per part improves the cache-locality of the construction.
 //! Query time is slightly slower though, since computing the part and index
@@ -100,18 +119,19 @@
 //! ## Sharding
 //!
 //! When the keys and/or their hashes do not all fit in memory at once, use sharding.
+//! This requires `SINGLE_PART=false`, e.g. via [`CompactPtrHash`].
 //! See [`shard::Sharding`] for details of different sharding methods.
 //! ```
-//! use ptr_hash::{PtrHash, PtrHashParams, Sharding};
+//! use ptr_hash::{CompactPtrHash, PtrHashParams, Sharding};
 //!
-//! let mut params = PtrHashParams::default();
+//! let mut params = PtrHashParams::default_compact();
 //! // The default value. For ~16GB of u64 hashes or ~32GB of u128 hashes.
 //! // Make sure to also leave space for the data structure itself.
 //! params.keys_per_shard = 1<<31;
 //! params.sharding = Sharding::Disk;
 //!
 //! let keys = vec![1,2,3]; // 10^12 or who knows how many keys.
-//! let mphf = <PtrHash>::new(&keys, params);
+//! let mphf = <CompactPtrHash>::new(&keys, params);
 //! ```
 //!
 //! ## Reducing space usage
@@ -119,8 +139,8 @@
 //! The default parameters are chosen for reliability, construction speed, and query speed, and give around 3 bits per keys.
 //! To achieve smaller sizes, consider using [`cacheline_ef::CachelineEfVec`] or [`pack::EliasFano`] as 'remap' structure, instead of `Vec<u32>`.
 //!
-//! Additionally, one can use the [`PtrHashParams::default_balanced()`] parameters, which use the `CubicEps` bucket function instead of `Linear`, and increase `lambda` from the default of `3.0` to `3.5`.
-//! [`PtrHashParams::default_compact()`] is even smaller, but even slower to construct, and generally less reliable.
+//! Additionally, one can use [`CompactPtrHash`] with [`PtrHashParams::default_balanced()`] parameters, which use the `CubicEps` bucket function instead of `Linear`, and increase `lambda` from the default of `3.0` to `3.5`.
+//! [`PtrHashParams::default_compact()`] is even smaller, but slower to construct, and generally slightly less reliable.
 //!
 //! ```
 //! # #[cfg(feature = "elias-fano")] {
@@ -314,7 +334,10 @@ type Pilot = u64;
 type PilotHash = u64;
 
 /// PtrHash datastructure.
-/// It is recommended to use PtrHash with default types.
+/// It is recommended to use PtrHash with default type aliases:
+/// - [`FastPtrHash`]: *non-minimal* PHF that skips remapping values into `[0, n)`.
+/// - [`DefaultPtrHash`]: MPHF that returns values in `[0, n)`.
+/// - [`CompactPtrHash`]: MPHF that allows for multi-threaded construction.
 ///
 /// - `Key`: The type of keys to hash.
 /// - `BF`: The bucket function to use. Inferred from `PtrHashParams` when calling `PtrHash::new()`.
@@ -323,8 +346,8 @@ type PilotHash = u64;
 ///       `hash::StringHash` (using `gxhash`) for strings, or `hash::StringHash128` when the number of string keys is very
 ///       large.
 /// - `V`: The pilots type. Usually `Vec<u8>`, or `&[u8]` for Epserde.
-/// - `SINGLE_PART`: Whether to use single-part optimization (default: true).
-/// - `REMAP`: Whether to build and use remapping (default: true).
+/// - `SINGLE_PART`: using a single part gives faster queries, but prevents multi-threaded construction (default: true).
+/// - `REMAP`: remapping results in a minimal PHF, but is slightly slower (default: true).
 #[cfg_attr(feature = "epserde", derive(epserde::prelude::Epserde))]
 #[derive(Clone, MemSize)]
 pub struct PtrHash<

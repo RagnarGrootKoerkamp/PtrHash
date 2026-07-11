@@ -55,13 +55,14 @@ PtrHash is primarily intended to be used on large sets of keys, say of size at
 least 1 million. Nevertheless, it can also be used for sets as small as e.g. 10
 keys. In this case, there will be a relatively large constant space overhead,
 and other methods may be smaller and/or faster.
-(PtrHash should still be fast, but the small probability of having to remap
-values may be slow compared to methods designed for small inputs.)
+(PtrHash should work fine and be reasonably fast, but for such small inputs the space-efficient
+design of PtrHash makes little sense and faster queries might be possible.)
 
 
 ## Usage
 
-Below, we use `PtrHashParams::default()` for a reasonable tradeoff between size
+See [docs.rs](https://docs.rs/ptr_hash) for the different variants and parameters.
+Below, we use `PtrHashParams::default()` for a reasonable trade-off between size
 (2.4 bits/key) and speed.
 Slightly smaller size is possible using `PtrHashParams::default_compact()`,
 at the cost of significantly slower construction time (2x) and lowered reliability.
@@ -78,7 +79,7 @@ let n = 1_000_000_000;
 let keys = ptr_hash::util::generate_keys(n);
 
 // Build the datastructure.
-let mphf = <PtrHash>::new(&keys, PtrHashParams::default());
+let mphf = <DefaultPtrHash>::new(&keys, PtrHashParams::default());
 
 // Get the minimal index of a key.
 let key = 0;
@@ -96,11 +97,23 @@ assert_eq!(indices.sum::<usize>(), (n * (n - 1)) / 2);
 
 // Test that all items map to different indices
 let mut taken = vec![false; n];
-for key in keys {
+for key in &keys {
     let idx = mphf.index(&key);
     assert!(!taken[idx]);
     taken[idx] = true;
 }
+
+// In case you want maximum query throughput at the cost of returning non-minimal values, use `FastPtrHash`.
+let phf = <FastPtrHash>::new(&keys, PtrHashParams::default());
+// phf.max_index() will be roughly `1.01*n`.
+
+for key in &keys {
+    let idx = phf.index(&key);
+    assert!(idx < phf.max_index());
+}
+
+// To enable parallel construction and optimize for space, use `CompactPtrHash`.
+let mphf = <CompactPtrHash>::new(&keys, PtrHashParams::default_compact());
 ```
 
 ## Epserde
