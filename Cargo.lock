@@ -1141,7 +1141,7 @@ dependencies = [
 
 [[package]]
 name = "ptr_hash"
-version = "2.0.0-alpha.1"
+version = "2.0.1"
 dependencies = [
  "bitvec",
  "cacheline-ef",

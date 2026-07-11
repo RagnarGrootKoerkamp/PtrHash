@@ -3,6 +3,8 @@
 <!-- next-header -->
 
 ## git
+
+## 2.0.1
 - Support 32-bit platforms and add CI ([#26](https://github.com/RagnarGrootKoerkamp/ptrhash/pull/26))
 - Move a number of dependencies behind (default-on) features and remove some
   unused deps. ([#26](https://github.com/RagnarGrootKoerkamp/ptrhash/pull/26),
