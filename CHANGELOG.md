@@ -3,6 +3,8 @@
 <!-- next-header -->
 
 ## git
+
+## 2.0.2
 - Make `gxhash` dependency optional so docs.rs and other non-SSE2 builds work.
 
 ## 2.0.1
