@@ -57,16 +57,19 @@ gxhash = { version = "3.5.0", optional = true }
 prefetch-index = "0.2.1"
 
 [features]
-default = ["elias-fano", "cacheline-ef", "gxhash"]
+default = ["elias-fano", "cacheline-ef"]
+# Epserde support for zero-cost deserialization from disk.
 epserde = ["dep:epserde", "dep:epserde-derive", "cacheline-ef/epserde"]
 # Enable iter_array_chunks unstable feature for iter_batch_exact, which is only for benchmarking.
 unstable = []
 cacheline-ef = ["dep:cacheline-ef"]
 elias-fano = ["dep:sucds"]
+# Support for gxhash string hashing which depends on SSE2.
 gxhash = ["dep:gxhash"]
 # Allow additional hash functions, on top of just FxHash and XxHash.
 hashers = ["dep:cityhash-102-rs", "dep:fastmurmur3", "dep:hashers", "dep:highway", "dep:metrohash", "dep:murmur2", "dep:murmur3", "dep:wyhash"]
 # default = ["epserde"]
+# Eanble clap::ValueEnum for the sharding enum.
 clap = ["dep:clap"]
 
 [dev-dependencies]

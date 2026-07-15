@@ -3,6 +3,7 @@
 <!-- next-header -->
 
 ## git
+- Make `gxhash` dependency optional so docs.rs and other non-SSE2 builds work.
 
 ## 2.0.1
 - Support 32-bit platforms and add CI ([#26](https://github.com/RagnarGrootKoerkamp/ptrhash/pull/26))
