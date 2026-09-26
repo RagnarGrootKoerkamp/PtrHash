@@ -4,6 +4,9 @@
 
 ## git
 
+- Only read the clock for build timings when trace logging is on, and never on
+  `wasm32-unknown-unknown`, where `std::time::Instant::now` panics.
+
 ## 2.1.1
 
 - Bump `cacheline_ef` to also use version `13` of `epserde`.

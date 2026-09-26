@@ -16,22 +16,40 @@ thread_local! {
     static LOG: std::cell::Cell<bool> = std::cell::Cell::new(true);
 }
 
-pub(crate) fn log_duration(name: &str, start: Instant) -> Instant {
+/// When a step started, for [`log_duration`].
+///
+/// The time is only read when trace logging is on, since it only feeds `trace!`, and never on
+/// `wasm32-unknown-unknown`, where `Instant::now` panics.
+#[derive(Clone, Copy)]
+pub(crate) struct Timer(Option<Instant>);
+
+impl Timer {
+    pub(crate) fn start() -> Self {
+        let enabled = log::log_enabled!(log::Level::Trace)
+            && !cfg!(all(target_arch = "wasm32", target_os = "unknown"));
+        Timer(enabled.then(Instant::now))
+    }
+}
+
+pub(crate) fn log_duration(name: &str, start: Timer) -> Timer {
+    let Some(instant) = start.0 else {
+        return start;
+    };
     if !LOG.with(|log| log.get()) {
         return start;
     }
     trace!(
         "{}",
-        format!("{name:>12}: {:>13.2?}s", start.elapsed().as_secs_f32()).bold()
+        format!("{name:>12}: {:>13.2?}s", instant.elapsed().as_secs_f32()).bold()
     );
-    Instant::now()
+    Timer::start()
 }
 
 pub fn generate_keys(n: usize) -> Vec<u64> {
     // TODO: Deterministic key generation.
-    let start = Instant::now();
+    let start = Timer::start();
     let keys = loop {
-        let start = Instant::now();
+        let start = Timer::start();
         let keys: Vec<_> = (0..n)
             .into_par_iter()
             .map_init(rng, |rng, _| rng.random())
@@ -53,8 +71,8 @@ pub fn generate_keys(n: usize) -> Vec<u64> {
 }
 
 pub fn generate_string_keys(n: usize) -> Vec<Vec<u8>> {
-    let start = Instant::now();
-    // let start = Instant::now();
+    let start = Timer::start();
+    // let start = Timer::start();
     let keys: Vec<_> = (0..n)
         .into_par_iter()
         .map_init(rng, |rng, _| {

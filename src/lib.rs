@@ -190,7 +190,7 @@ use stats::BucketStats;
 use std::array::from_fn;
 use std::{borrow::Borrow, default::Default, marker::PhantomData, time::Instant};
 
-use crate::{hash::*, pack::Packed, reduce::*, util::log_duration};
+use crate::{hash::*, pack::Packed, reduce::*, util::{log_duration, Timer}};
 
 /// Parameters for PtrHash construction.
 ///
@@ -592,7 +592,7 @@ impl<
         &mut self,
         keys: impl ParallelIterator<Item = impl Borrow<Key>> + Clone + 'a,
     ) -> Option<BucketStats> {
-        let overall_start = std::time::Instant::now();
+        let overall_start = Timer::start();
         // Initialize arrays;
         let mut taken: Vec<BitVec> = vec![];
         let mut pilots: Vec<u8> = vec![];
@@ -643,7 +643,7 @@ impl<
                 izip!(shard_hashes, shard_pilots, shard_taken).enumerate()
             {
                 // Determine the buckets.
-                let start = std::time::Instant::now();
+                let start = Timer::start();
                 let Some((hashes, part_starts)) = self.sort_parts(shard, hashes) else {
                     trace!("Found duplicate hashes");
                     // Found duplicate hashes.
@@ -663,7 +663,7 @@ impl<
                 }
             }
 
-            let start = std::time::Instant::now();
+            let start = Timer::start();
             let remap = self.remap_free_slots(&taken);
             log_duration("remap free", start);
             if remap.is_err() {

@@ -1,7 +1,6 @@
 use super::*;
 use crate::bucket_idx::BucketIdx;
 use rdst::RadixSort;
-use std::time::Instant;
 
 impl<Key: KeyT + ?Sized, BF: BucketFn, F: Packed, Hx: KeyHasher<Key>, const SINGLE_PART: bool, const REMAP: bool>
     PtrHash<Key, BF, F, Hx, Vec<u8>, SINGLE_PART, REMAP>
@@ -24,7 +23,7 @@ impl<Key: KeyT + ?Sized, BF: BucketFn, F: Packed, Hx: KeyHasher<Key>, const SING
         // 32 bits.
         // NOTE: This does not work for other reduction methods.
 
-        let start = Instant::now();
+        let start = Timer::start();
         // 2. Radix sort hashes.
         // HOT: This takes half the time for 128bit hashes.
         // TODO: Just append each hash to its part directly, where each part has
