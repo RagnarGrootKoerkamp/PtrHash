@@ -4,6 +4,8 @@
 
 ## git
 
+## 2.1.2
+
 - Avoid unnecessary calls to `Instant::now()` on WASM.
 
 ## 2.1.1
