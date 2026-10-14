@@ -1,9 +1,9 @@
 //! Benchmark of constructing and querying a 10^9 table.
 use ptr_hash::{
+    PtrHash, PtrHashParams,
     hash::{FastIntHash, KeyHasher},
     pack::MutPacked,
     util::generate_keys,
-    PtrHash, PtrHashParams,
 };
 use std::hint::black_box;
 
@@ -47,7 +47,9 @@ fn bench<
     })
     .0;
 
-    eprintln!("{name:<40}: {construction:6.1} ns/key, {pilots:4.2}+{remapping:4.2}={space:4.2} bits/key, {query:5.1} {stream:5.1} {batch:5.1}");
+    eprintln!(
+        "{name:<40}: {construction:6.1} ns/key, {pilots:4.2}+{remapping:4.2}={space:4.2} bits/key, {query:5.1} {stream:5.1} {batch:5.1}"
+    );
 }
 
 fn main() {

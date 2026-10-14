@@ -2,17 +2,17 @@ use std::{cmp::min, collections::HashMap, hint::black_box, time::Instant};
 
 use cacheline_ef::CachelineEfVec;
 use ptr_hash::{
+    KeyT, PtrHash, PtrHashParams, Sharding,
     bucket_fn::{BucketFn, CubicEps, Linear, Optimal, Skewed, Square},
     hash::{
         FastIntHash, Gx, Gx128, GxInt, KeyHasher, NoHash, StringHash, StringHash128,
-        StrongerIntHash, Xxh3, Xxh3Int, Xxh3_128,
+        StrongerIntHash, Xxh3, Xxh3_128, Xxh3Int,
     },
     pack::{EliasFano, MutPacked},
     stats::BucketStats,
     util::{generate_keys, generate_string_keys},
-    KeyT, PtrHash, PtrHashParams, Sharding,
 };
-use rand::{rng, Rng, RngExt};
+use rand::{Rng, RngExt, rng};
 use rayon::iter::IntoParallelIterator;
 use serde::Serialize;
 

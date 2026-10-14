@@ -1,8 +1,8 @@
 //! Benchmark query throughput of the default configurations.
 use ptr_hash::{
+    CompactPtrHash, DefaultPtrHash, FastPtrHash, PtrHashParams,
     hash::{FastIntHash, NoHash},
     util::generate_keys,
-    CompactPtrHash, DefaultPtrHash, FastPtrHash, PtrHashParams,
 };
 use std::hint::black_box;
 

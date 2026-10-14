@@ -176,8 +176,8 @@ use bucket_fn::BucketFn;
 use bucket_fn::CubicEps;
 use bucket_fn::Linear;
 use bucket_fn::SquareEps;
-use itertools::izip;
 use itertools::Itertools;
+use itertools::izip;
 use log::debug;
 use log::trace;
 use mem_dbg::MemSize;
@@ -190,7 +190,12 @@ use stats::BucketStats;
 use std::array::from_fn;
 use std::{borrow::Borrow, default::Default, marker::PhantomData, time::Instant};
 
-use crate::{hash::*, pack::Packed, reduce::*, util::{log_duration, Timer}};
+use crate::{
+    hash::*,
+    pack::Packed,
+    reduce::*,
+    util::{Timer, log_duration},
+};
 
 /// Parameters for PtrHash construction.
 ///
@@ -406,13 +411,13 @@ pub struct PtrHash<
 
 /// An empty PtrHash instance. Mostly useless, but may be convenient.
 impl<
-        Key: KeyT,
-        BF: BucketFn,
-        F: MutPacked,
-        Hx: KeyHasher<Key>,
-        const SINGLE_PART: bool,
-        const REMAP: bool,
-    > Default for PtrHash<Key, BF, F, Hx, Vec<u8>, SINGLE_PART, REMAP>
+    Key: KeyT,
+    BF: BucketFn,
+    F: MutPacked,
+    Hx: KeyHasher<Key>,
+    const SINGLE_PART: bool,
+    const REMAP: bool,
+> Default for PtrHash<Key, BF, F, Hx, Vec<u8>, SINGLE_PART, REMAP>
 where
     PtrHashParams<BF>: Default,
 {
@@ -444,13 +449,13 @@ where
 
 /// Construction methods taking a list of keys.
 impl<
-        Key: KeyT,
-        BF: BucketFn,
-        F: MutPacked,
-        Hx: KeyHasher<Key>,
-        const SINGLE_PART: bool,
-        const REMAP: bool,
-    > PtrHash<Key, BF, F, Hx, Vec<u8>, SINGLE_PART, REMAP>
+    Key: KeyT,
+    BF: BucketFn,
+    F: MutPacked,
+    Hx: KeyHasher<Key>,
+    const SINGLE_PART: bool,
+    const REMAP: bool,
+> PtrHash<Key, BF, F, Hx, Vec<u8>, SINGLE_PART, REMAP>
 {
     /// Create a new PtrHash instance from the given keys.
     ///
@@ -492,13 +497,13 @@ impl<
 
 /// Construction (helper) methods working with unsized keys.
 impl<
-        Key: KeyT + ?Sized,
-        BF: BucketFn,
-        F: MutPacked,
-        Hx: KeyHasher<Key>,
-        const SINGLE_PART: bool,
-        const REMAP: bool,
-    > PtrHash<Key, BF, F, Hx, Vec<u8>, SINGLE_PART, REMAP>
+    Key: KeyT + ?Sized,
+    BF: BucketFn,
+    F: MutPacked,
+    Hx: KeyHasher<Key>,
+    const SINGLE_PART: bool,
+    const REMAP: bool,
+> PtrHash<Key, BF, F, Hx, Vec<u8>, SINGLE_PART, REMAP>
 {
     /// Same as `new` above, but takes a `ParallelIterator` over keys instead of a slice.
     ///
@@ -727,14 +732,14 @@ impl<
 
 /// Indexing methods.
 impl<
-        Key: KeyT + ?Sized,
-        BF: BucketFn,
-        F: Packed,
-        Hx: KeyHasher<Key>,
-        V: AsRef<[u8]>,
-        const SINGLE_PART: bool,
-        const REMAP: bool,
-    > PtrHash<Key, BF, F, Hx, V, SINGLE_PART, REMAP>
+    Key: KeyT + ?Sized,
+    BF: BucketFn,
+    F: Packed,
+    Hx: KeyHasher<Key>,
+    V: AsRef<[u8]>,
+    const SINGLE_PART: bool,
+    const REMAP: bool,
+> PtrHash<Key, BF, F, Hx, V, SINGLE_PART, REMAP>
 {
     /// Return the number of bits per element used for the pilots (`.0`) and the
     /// remapping (`.1`).
@@ -751,11 +756,7 @@ impl<
     /// `self.index()` always returns below this bound.
     /// Around `n/alpha ~ 1.01*n` when `REMAP=false`, or `n` when `REMAP=true`.
     pub fn max_index(&self) -> usize {
-        if REMAP {
-            self.n
-        } else {
-            self.slots_total
-        }
+        if REMAP { self.n } else { self.slots_total }
     }
 
     /// `self.index_no_remap()` always returns below this bound.
@@ -891,19 +892,19 @@ impl<
         }
 
         impl<
-                'a,
-                const B: usize,
-                Key: KeyT + ?Sized,
-                Q: Borrow<Key> + 'a,
-                KeyIt: Iterator<Item = Q> + 'a,
-                BF: BucketFn,
-                F: Packed,
-                Hx: KeyHasher<Key>,
-                V: AsRef<[u8]>,
-                const SINGLE_PART: bool,
-                const REMAP: bool,
-                const QUERY_REMAP: bool,
-            > Iterator for It<'a, B, Key, Q, KeyIt, BF, F, Hx, V, SINGLE_PART, REMAP, QUERY_REMAP>
+            'a,
+            const B: usize,
+            Key: KeyT + ?Sized,
+            Q: Borrow<Key> + 'a,
+            KeyIt: Iterator<Item = Q> + 'a,
+            BF: BucketFn,
+            F: Packed,
+            Hx: KeyHasher<Key>,
+            V: AsRef<[u8]>,
+            const SINGLE_PART: bool,
+            const REMAP: bool,
+            const QUERY_REMAP: bool,
+        > Iterator for It<'a, B, Key, Q, KeyIt, BF, F, Hx, V, SINGLE_PART, REMAP, QUERY_REMAP>
         {
             type Item = usize;
             fn next(&mut self) -> Option<usize> {

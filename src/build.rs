@@ -7,13 +7,19 @@ use std::{
     collections::BinaryHeap,
     iter::zip,
     sync::{
-        atomic::{AtomicUsize, Ordering},
         Mutex,
+        atomic::{AtomicUsize, Ordering},
     },
 };
 
-impl<Key: KeyT + ?Sized, BF: BucketFn, F: Packed, Hx: KeyHasher<Key>, const SINGLE_PART: bool, const REMAP: bool>
-    PtrHash<Key, BF, F, Hx, Vec<u8>, SINGLE_PART, REMAP>
+impl<
+    Key: KeyT + ?Sized,
+    BF: BucketFn,
+    F: Packed,
+    Hx: KeyHasher<Key>,
+    const SINGLE_PART: bool,
+    const REMAP: bool,
+> PtrHash<Key, BF, F, Hx, Vec<u8>, SINGLE_PART, REMAP>
 {
     pub(super) fn build_shard(
         &self,

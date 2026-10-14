@@ -1,4 +1,4 @@
-use ptr_hash::{bucket_fn::Linear, hash::Gx, pack::EliasFano, PtrHash, PtrHashParams, Sharding};
+use ptr_hash::{PtrHash, PtrHashParams, Sharding, bucket_fn::Linear, hash::Gx, pack::EliasFano};
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
 fn main() {

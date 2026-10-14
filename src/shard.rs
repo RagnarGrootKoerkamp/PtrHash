@@ -54,13 +54,13 @@ impl clap::ValueEnum for Sharding {
 }
 
 impl<
-        Key: KeyT + ?Sized,
-        BF: BucketFn,
-        F: Packed,
-        Hx: KeyHasher<Key>,
-        const SINGLE_PART: bool,
-        const REMAP: bool,
-    > PtrHash<Key, BF, F, Hx, Vec<u8>, SINGLE_PART, REMAP>
+    Key: KeyT + ?Sized,
+    BF: BucketFn,
+    F: Packed,
+    Hx: KeyHasher<Key>,
+    const SINGLE_PART: bool,
+    const REMAP: bool,
+> PtrHash<Key, BF, F, Hx, Vec<u8>, SINGLE_PART, REMAP>
 {
     /// Return an iterator over the Vec of hashes of each shard.
     pub(crate) fn shards<'a>(
@@ -134,12 +134,16 @@ impl<
             "Each shard takes more than the provided memory."
         );
         if mem < usize::MAX {
-            info!("Hybrid sharding: writing hashes to disk for {shards_on_disk} shards at a time, for total {} shards each of ~{} keys.", self.shards, self.n / self.shards);
+            info!(
+                "Hybrid sharding: writing hashes to disk for {shards_on_disk} shards at a time, for total {} shards each of ~{} keys.",
+                self.shards,
+                self.n / self.shards
+            );
         } else {
             info!(
                 "On-disk sharding: writing hashes to disk for all {} shards at a time, each of ~{} keys.",
-                self.shards, self.n / self.shards
-
+                self.shards,
+                self.n / self.shards
             );
         }
 

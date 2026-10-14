@@ -2,8 +2,14 @@ use super::*;
 use crate::bucket_idx::BucketIdx;
 use rdst::RadixSort;
 
-impl<Key: KeyT + ?Sized, BF: BucketFn, F: Packed, Hx: KeyHasher<Key>, const SINGLE_PART: bool, const REMAP: bool>
-    PtrHash<Key, BF, F, Hx, Vec<u8>, SINGLE_PART, REMAP>
+impl<
+    Key: KeyT + ?Sized,
+    BF: BucketFn,
+    F: Packed,
+    Hx: KeyHasher<Key>,
+    const SINGLE_PART: bool,
+    const REMAP: bool,
+> PtrHash<Key, BF, F, Hx, Vec<u8>, SINGLE_PART, REMAP>
 {
     /// Returns:
     /// 1. Hashes
@@ -99,9 +105,9 @@ impl<Key: KeyT + ?Sized, BF: BucketFn, F: Packed, Hx: KeyHasher<Key>, const SING
 
         if max_part_len as usize > self.slots {
             trace!(
-                    "Shard {shard}: Part has more elements than slots! elements {max_part_len} > {} slots",
-                    self.slots
-                );
+                "Shard {shard}: Part has more elements than slots! elements {max_part_len} > {} slots",
+                self.slots
+            );
             return None;
         }
 
@@ -146,7 +152,10 @@ impl<Key: KeyT + ?Sized, BF: BucketFn, F: Packed, Hx: KeyHasher<Key>, const SING
         // This assert is disabled, because it only holds when using uniform buckets.
         if false {
             let expected_bucket_size = self.slots as f32 / self.buckets as f32;
-            assert!(max_bucket_size <= (20. * expected_bucket_size) as usize, "Part {part}: Bucket size {max_bucket_size} is too much larger than the expected size of {expected_bucket_size}." );
+            assert!(
+                max_bucket_size <= (20. * expected_bucket_size) as usize,
+                "Part {part}: Bucket size {max_bucket_size} is too much larger than the expected size of {expected_bucket_size}."
+            );
         }
 
         // Compute start positions of each range of buckets of equal size.
