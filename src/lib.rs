@@ -76,7 +76,7 @@
 //!
 //! ## Default configurations
 //!
-//! - For fastest query throughput, use [`FastPtrHash`] (2.67 bits/key), which is a non-minimal PHF that skips remapping values into `[0, n)`.67 bits/key.
+//! - For fastest query throughput, use [`FastPtrHash`] (2.67 bits/key), which is a non-minimal PHF that skips remapping values into `[0, n)` (2.67 bits/key).
 //! - If you want a minimal PHF that returns values in `[0, n)`, use [`DefaultPtrHash`] (3.0 bits/key).
 //! - If you have many keys, use [`CompactPtrHash`] (2.15 bits/key), which allows for multi-threaded construction
 //!   by splitting the input into multiple parts and uses a more space-efficient bucket function.

@@ -33,13 +33,14 @@ Space usage and query throughput of a for-loop in ns/key as measured by `example
 
 | method         | bits/key | hash   | 100k | 1M  | 10M | 100 M |
 |----------------|----------|--------|------|-----|-----|-------|
-| FastPtrHash    | 2.67     | NoHash | 1.5  | 2.2 | 3.1 | 7.6   |
+| FastPtrHash*   | 2.67     | NoHash | 1.5  | 2.2 | 3.1 | 7.6   |
 |                |          | FxHash | 1.7  | 2.5 | 3.2 | 8.2   |
 | DefaultPtrHash | 3.00     | NoHash | 1.7  | 2.6 | 3.3 | 8.5   |
 |                |          | FxHash | 2.0  | 2.7 | 3.7 | 9.1   |
 | CompactPtrHash | 2.15     | NoHash | 4.4  | 5.5 | 6.8 | 15.6  |
 |                |          | FxHash | 4.8  | 5.8 | 7.2 | 15.7  |
 
+*: The fast variant gives a non-minimal perfect hash function that may return values slightly above $n$.
 
 ## Performance on large input
 
@@ -53,7 +54,7 @@ prefetching 32 iterations ahead, and for prefetching in batches of 32.
 
 | method         | pilots bits/key | remap  bits/key | space bits/key | construction ns/key | loop ns/key | stream ns/key | batch ns/key |
 |----------------|-----------------|-----------------|----------------|---------------------|-------------|---------------|--------------|
-| FastPtrHash    | 2.67            | -               | 2.67           | 343.5               | 9.7         | 7.5           | 9.0          |
+| FastPtrHash*   | 2.67            | -               | 2.67           | 343.5               | 9.7         | 7.5           | 9.0          |
 | DefaultPtrHash | 2.67            | 0.33            | 3.00           | 349.9               | 12.0        | 8.3           | 9.4          |
 | CompactPtrHash | 2.05            | 0.10            | 2.15           | 49.0 (12t)          | 19.8        | 8.5           | 10.1         |
 
