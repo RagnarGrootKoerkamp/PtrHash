@@ -64,7 +64,7 @@
 //!     assert!(idx < phf.max_index());
 //! }
 //!
-//! // `CompactPtrHash` uses multi-threaded construction (with the `rayon` feature) and is more space-efficient,
+//! // `CompactPtrHash` supports multi-threaded construction and is more space-efficient,
 //! // but slightly slower to query.
 //! let phf = <ptr_hash::CompactPtrHash>::new(&keys, PtrHashParams::default_compact());
 //!
@@ -332,8 +332,6 @@ pub type CompactPtrHash<Hx = hash::FastIntHash, Key = u64> =
 pub trait KeyT: Send + Sync + std::hash::Hash {}
 impl<T: Send + Sync + std::hash::Hash + ?Sized> KeyT for T {}
 
-/// What construction iterates the keys with: a rayon `ParallelIterator` with the `rayon` feature, a
-/// plain `Iterator` without. It is cloned to hash the keys again when a seed fails.
 #[cfg(feature = "rayon")]
 pub(crate) trait KeyIter: ParallelIterator + Clone {}
 #[cfg(feature = "rayon")]
@@ -343,7 +341,6 @@ pub(crate) trait KeyIter: Iterator + Clone {}
 #[cfg(not(feature = "rayon"))]
 impl<I: Iterator + Clone> KeyIter for I {}
 
-/// Iterates a slice of keys for construction, in parallel with the `rayon` feature.
 #[cfg(feature = "rayon")]
 fn key_iter<Key: Sync>(keys: &[Key]) -> impl KeyIter<Item = &Key> {
     keys.par_iter()
@@ -532,8 +529,6 @@ impl<
     /// The iterator must be cloneable, since construction can fail for the
     /// first seed (e.g. due to duplicate hashes), in which case a new pass over
     /// keys is need.
-    ///
-    /// Only available when the `rayon` feature is active.
     #[cfg(feature = "rayon")]
     pub fn new_from_par_iter<'a>(
         n: usize,

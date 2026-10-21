@@ -47,7 +47,7 @@ Space usage and query throughput of a for-loop in ns/key as measured by `example
 PtrHash supports up to `2^40` keys (and probably more).
 For `n=10^9` integer keys with `FxHash`, we get the following on my `i7-10750H`
 at `3.6GHz` with 6 cores (see `examples/large_bench.rs`).
-The construction uses multi-threading (with the default `rayon` feature) only for `CompactPtrHash`, and remapping
+The construction uses multi-threading only for `CompactPtrHash`, and remapping
 is skipped for `FastPtrHash`.
 The last two columns indicate the query throughput for streaming queries with
 prefetching 32 iterations ahead, and for prefetching in batches of 32.
