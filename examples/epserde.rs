@@ -33,7 +33,7 @@ fn main() {
 
     // Ep-serde from memory.
     eprintln!("Load into memory, with epserde..");
-    let _mphf2 = unsafe { PtrHashXxh3::load_mem(path).unwrap().uncase() };
+    let _mphf2 = unsafe { PtrHashXxh3::load_mem(path).unwrap() }.uncase();
 
     // Ep-serde from mmap.
     eprintln!("Load into mmap, with epserde..");
