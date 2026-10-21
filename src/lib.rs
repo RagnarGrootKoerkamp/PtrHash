@@ -64,7 +64,7 @@
 //!     assert!(idx < phf.max_index());
 //! }
 //!
-//! // `CompactPtrHash` uses multi-threaded construction and is more space-efficient,
+//! // `CompactPtrHash` uses multi-threaded construction (with the `rayon` feature) and is more space-efficient,
 //! // but slightly slower to query.
 //! let phf = <ptr_hash::CompactPtrHash>::new(&keys, PtrHashParams::default_compact());
 //!
@@ -184,6 +184,7 @@ use mem_dbg::MemSize;
 use pack::MutPacked;
 use rand::{RngExt, SeedableRng};
 use rand_chacha::ChaCha8Rng;
+#[cfg(feature = "rayon")]
 use rayon::prelude::*;
 pub use shard::Sharding;
 use stats::BucketStats;
@@ -331,6 +332,27 @@ pub type CompactPtrHash<Hx = hash::FastIntHash, Key = u64> =
 pub trait KeyT: Send + Sync + std::hash::Hash {}
 impl<T: Send + Sync + std::hash::Hash + ?Sized> KeyT for T {}
 
+/// What construction iterates the keys with: a rayon `ParallelIterator` with the `rayon` feature, a
+/// plain `Iterator` without. It is cloned to hash the keys again when a seed fails.
+#[cfg(feature = "rayon")]
+pub(crate) trait KeyIter: ParallelIterator + Clone {}
+#[cfg(feature = "rayon")]
+impl<I: ParallelIterator + Clone> KeyIter for I {}
+#[cfg(not(feature = "rayon"))]
+pub(crate) trait KeyIter: Iterator + Clone {}
+#[cfg(not(feature = "rayon"))]
+impl<I: Iterator + Clone> KeyIter for I {}
+
+/// Iterates a slice of keys for construction, in parallel with the `rayon` feature.
+#[cfg(feature = "rayon")]
+fn key_iter<Key: Sync>(keys: &[Key]) -> impl KeyIter<Item = &Key> {
+    keys.par_iter()
+}
+#[cfg(not(feature = "rayon"))]
+fn key_iter<Key>(keys: &[Key]) -> impl KeyIter<Item = &Key> {
+    keys.iter()
+}
+
 // Some fixed algorithmic decisions.
 type Rp = FastReduce;
 type Rb = FastReduce;
@@ -470,7 +492,7 @@ impl<
     pub fn new(keys: &[Key], params: PtrHashParams<BF>) -> Self {
         let mut ptr_hash = Self::init(keys.len(), params);
         ptr_hash
-            .compute_pilots(keys.par_iter())
+            .compute_pilots(key_iter(keys))
             .expect("Unable to construct PtrHash after 10 tries. Try using a better hash or decreasing lambda.");
         ptr_hash
     }
@@ -480,7 +502,7 @@ impl<
     pub fn new_with_stats(keys: &[Key], params: PtrHashParams<BF>) -> (Self, BucketStats) {
         let mut ptr_hash = Self::init(keys.len(), params);
         let stats = ptr_hash
-            .compute_pilots(keys.par_iter())
+            .compute_pilots(key_iter(keys))
             .expect("Unable to construct PtrHash after 10 tries. Try using a better hash or decreasing lambda.");
         (ptr_hash, stats)
     }
@@ -490,7 +512,7 @@ impl<
     /// parameters) and the eviction chains become too long.
     pub fn try_new(keys: &[Key], params: PtrHashParams<BF>) -> Option<Self> {
         let mut ptr_hash = Self::init(keys.len(), params);
-        ptr_hash.compute_pilots(keys.par_iter())?;
+        ptr_hash.compute_pilots(key_iter(keys))?;
         Some(ptr_hash)
     }
 }
@@ -510,6 +532,9 @@ impl<
     /// The iterator must be cloneable, since construction can fail for the
     /// first seed (e.g. due to duplicate hashes), in which case a new pass over
     /// keys is need.
+    ///
+    /// Only available when the `rayon` feature is active.
+    #[cfg(feature = "rayon")]
     pub fn new_from_par_iter<'a>(
         n: usize,
         keys: impl ParallelIterator<Item = impl Borrow<Key>> + Clone + 'a,
@@ -595,7 +620,7 @@ impl<
 
     fn compute_pilots<'a>(
         &mut self,
-        keys: impl ParallelIterator<Item = impl Borrow<Key>> + Clone + 'a,
+        keys: impl KeyIter<Item = impl Borrow<Key>> + 'a,
     ) -> Option<BucketStats> {
         let overall_start = Timer::start();
         // Initialize arrays;
