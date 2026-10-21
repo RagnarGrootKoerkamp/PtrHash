@@ -174,8 +174,6 @@ fn new_par_iter() {
     <PtrHash>::new_from_par_iter(n, keys.par_iter(), Default::default());
 }
 
-/// Sharding through `new`, which needs no `rayon` feature: small enough for debug builds, and the
-/// only sharding test without the feature.
 #[test]
 fn sharding_from_slice() {
     let n = 1 << 18;
