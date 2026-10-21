@@ -4,10 +4,7 @@
 
 ## git
 
-- Make `rayon` an optional feature, turned on by default. When the feature is turned off, construction runs
-  on the calling thread and never starts a rayon thread pool. Useful for targets without threads (wasm32),
-  and for processes that fork the process after building (Python multiprocessing), since rayon's global
-  pool is not fork-safe.
+- Make `rayon` an optional dependency, gated by feature `rayon`(turned on by default).
 
 ## 2.1.2
 
