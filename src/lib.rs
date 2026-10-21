@@ -332,15 +332,19 @@ pub type CompactPtrHash<Hx = hash::FastIntHash, Key = u64> =
 pub trait KeyT: Send + Sync + std::hash::Hash {}
 impl<T: Send + Sync + std::hash::Hash + ?Sized> KeyT for T {}
 
+/// A parallel iterator over keys.
 #[cfg(feature = "rayon")]
-pub(crate) trait KeyIter: ParallelIterator + Clone {}
+trait KeyIter: ParallelIterator + Clone {}
 #[cfg(feature = "rayon")]
 impl<I: ParallelIterator + Clone> KeyIter for I {}
+
+/// An iterator over keys.
 #[cfg(not(feature = "rayon"))]
-pub(crate) trait KeyIter: Iterator + Clone {}
+trait KeyIter: Iterator + Clone {}
 #[cfg(not(feature = "rayon"))]
 impl<I: Iterator + Clone> KeyIter for I {}
 
+/// A wrapper function around `iter` or `par_iter`, to abstract away the `rayon` feature.
 #[cfg(feature = "rayon")]
 fn key_iter<Key: Sync>(keys: &[Key]) -> impl KeyIter<Item = &Key> {
     keys.par_iter()

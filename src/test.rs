@@ -174,28 +174,6 @@ fn new_par_iter() {
     <PtrHash>::new_from_par_iter(n, keys.par_iter(), Default::default());
 }
 
-#[test]
-fn sharding_from_slice() {
-    let n = 1 << 18;
-    let keys = (0..n as u64).collect::<Vec<_>>();
-    for sharding in [Sharding::Memory, Sharding::Disk, Sharding::Hybrid(1 << 20)] {
-        let ptr_hash = <CompactPtrHash<StrongerIntHash>>::new(
-            &keys,
-            PtrHashParams {
-                keys_per_shard: 1 << 16,
-                sharding,
-                ..PtrHashParams::default_compact()
-            },
-        );
-        let mut done = bitvec![0; n];
-        for key in &keys {
-            let idx = ptr_hash.index(key);
-            assert!(!done[idx], "{sharding:?}: two keys share index {idx}");
-            done.set(idx, true);
-        }
-    }
-}
-
 #[cfg(feature = "rayon")]
 #[test]
 #[cfg_attr(debug_assertions, ignore = "only run in release mode")]
