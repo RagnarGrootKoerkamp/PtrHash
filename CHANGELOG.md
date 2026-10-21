@@ -4,6 +4,8 @@
 
 ## git
 
+## 2.1.3
+
 - Make `rayon` an optional dependency, gated by default-on feature `rayon`.
 
 ## 2.1.2
