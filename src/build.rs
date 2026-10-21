@@ -2,6 +2,7 @@ use super::*;
 use crate::{bucket_idx::BucketIdx, stats::BucketStats};
 use bitvec::{slice::BitSlice, vec::BitVec};
 use log::warn;
+#[cfg(feature = "rayon")]
 use rayon::prelude::*;
 use std::{
     collections::BinaryHeap,
@@ -29,9 +30,13 @@ impl<
         pilots: &mut [u8],
         taken: &mut [BitVec],
     ) -> Option<BucketStats> {
+        #[cfg(feature = "rayon")]
         let pilots_per_part = pilots.par_chunks_exact_mut(self.buckets);
+        #[cfg(not(feature = "rayon"))]
+        let pilots_per_part = pilots.chunks_exact_mut(self.buckets);
 
-        let iter = pilots_per_part.zip(taken).enumerate();
+        #[cfg_attr(feature = "rayon", allow(unused_mut))]
+        let mut iter = pilots_per_part.zip(taken).enumerate();
 
         // let total_evictions = AtomicUsize::new(0);
         let parts_done = AtomicUsize::new(shard * self.parts_per_shard);

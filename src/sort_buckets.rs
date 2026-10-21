@@ -42,7 +42,10 @@ impl<
         let start = log_duration("┌ radix sort", start);
 
         // 3. Check duplicates.
+        #[cfg(feature = "rayon")]
         let distinct = hashes.par_windows(2).all(|w| w[0] != w[1]);
+        #[cfg(not(feature = "rayon"))]
+        let distinct = hashes.windows(2).all(|w| w[0] != w[1]);
         let start = log_duration("├ check dups", start);
         if !distinct {
             eprintln!("Hashes are not distinct!");

@@ -166,6 +166,7 @@ fn index_batch() {
     }
 }
 
+#[cfg(feature = "rayon")]
 #[test]
 fn new_par_iter() {
     let n = 100_000;
@@ -173,6 +174,31 @@ fn new_par_iter() {
     <PtrHash>::new_from_par_iter(n, keys.par_iter(), Default::default());
 }
 
+/// Sharding through `new`, which needs no `rayon` feature: small enough for debug builds, and the
+/// only sharding test without the feature.
+#[test]
+fn sharding_from_slice() {
+    let n = 1 << 18;
+    let keys = (0..n as u64).collect::<Vec<_>>();
+    for sharding in [Sharding::Memory, Sharding::Disk, Sharding::Hybrid(1 << 20)] {
+        let ptr_hash = <CompactPtrHash<StrongerIntHash>>::new(
+            &keys,
+            PtrHashParams {
+                keys_per_shard: 1 << 16,
+                sharding,
+                ..PtrHashParams::default_compact()
+            },
+        );
+        let mut done = bitvec![0; n];
+        for key in &keys {
+            let idx = ptr_hash.index(key);
+            assert!(!done[idx], "{sharding:?}: two keys share index {idx}");
+            done.set(idx, true);
+        }
+    }
+}
+
+#[cfg(feature = "rayon")]
 #[test]
 #[cfg_attr(debug_assertions, ignore = "only run in release mode")]
 fn in_memory_sharding() {
@@ -197,6 +223,7 @@ fn in_memory_sharding() {
     }
 }
 
+#[cfg(feature = "rayon")]
 #[test]
 #[cfg_attr(debug_assertions, ignore = "only run in release mode")]
 fn on_disk_sharding() {
@@ -222,6 +249,7 @@ fn on_disk_sharding() {
 }
 
 /// Test that sharded construction and queries work with more than 2^32 keys.
+#[cfg(feature = "rayon")]
 #[test]
 #[ignore = "very slow"]
 fn many_keys_memory() {
@@ -252,6 +280,7 @@ fn many_keys_memory() {
 }
 
 /// Test that sharded construction and queries work with more than 2^32 keys.
+#[cfg(feature = "rayon")]
 #[test]
 #[ignore = "very slow; writes 64GB to disk"]
 fn many_keys_disk() {

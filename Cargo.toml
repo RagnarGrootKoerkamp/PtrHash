@@ -27,13 +27,14 @@ colored = "3.0.0"
 itertools = "0.15.0"
 rand = "0.10.2"
 rand_chacha = "0.10.0"
-rayon = "1.8.0"
-rdst = "0.20.11"
+rdst = { version = "0.20.11", default-features = false }
 tempfile = "3.8.1"
 fastrand = "2.0.1"
 mem_dbg = "0.4.2"
 
 # Optional deps
+# Parallel construction; see the `rayon` feature.
+rayon = { version = "1.8.0", optional = true }
 # Enable clap::ValueEnum for the sharding enum.
 clap = { version = "4.4.6", features = ["derive"], optional = true }
 epserde = { version = "0.13.0", optional = true }
@@ -62,7 +63,9 @@ prefetch-index = "0.2.1"
 
 
 [features]
-default = ["elias-fano", "cacheline-ef"]
+default = ["rayon", "elias-fano", "cacheline-ef"]
+# Multi-threaded construction (and radix sort)
+rayon = ["dep:rayon", "rdst/multi-threaded"]
 # Epserde support for zero-cost deserialization from disk.
 epserde = ["dep:epserde", "dep:epserde-derive", "cacheline-ef/epserde"]
 # Enable iter_array_chunks unstable feature for iter_batch_exact, which is only for benchmarking.
@@ -81,11 +84,11 @@ required-features = ["epserde"]
 
 [[example]]
 name = "string_keys"
-required-features = ["elias-fano", "gxhash"]
+required-features = ["rayon", "elias-fano", "gxhash"]
 
 [[example]]
 name = "evals"
-required-features = ["elias-fano", "cacheline-ef", "gxhash", "serde"]
+required-features = ["rayon", "elias-fano", "cacheline-ef", "gxhash", "serde"]
 
 [[example]]
 name = "query_bench"

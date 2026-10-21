@@ -4,6 +4,11 @@
 
 ## git
 
+- Make `rayon` an optional feature, turned on by default. When the feature is turned off, construction runs
+  on the calling thread and never starts a rayon thread pool. Useful for targets without threads (wasm32),
+  and for processes that fork the process after building (Python multiprocessing), since rayon's global
+  pool is not fork-safe.
+
 ## 2.1.2
 
 - Avoid unnecessary calls to `Instant::now()` on WASM.
