@@ -627,15 +627,16 @@ impl<
         let mut pilots: Vec<u8> = vec![];
 
         let mut tries = 0;
-        const MAX_TRIES: usize = 10;
+        // Give more tries for small n, where collisions are more likely.
+        let max_tries: usize = if self.n < 100 { 100 } else { 10 };
 
         let mut rng = ChaCha8Rng::seed_from_u64(31415);
 
         // Loop over global seeds `s`.
         let stats = 's: loop {
             tries += 1;
-            if tries > MAX_TRIES {
-                log::error!("PtrHash failed to find a global seed after {MAX_TRIES} tries.");
+            if tries > max_tries {
+                log::error!("PtrHash failed to find a global seed after {max_tries} tries.");
                 return None;
             }
 
