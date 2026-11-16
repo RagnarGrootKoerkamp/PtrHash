@@ -414,11 +414,13 @@ pub struct PtrHash<
     /// Fast %parts.
     rem_parts: Rp,
     /// Fast %b.
+    // NOTE: This must be odd to ensure all seed bits are used!
     rem_buckets: Rb,
     /// Fast %b_total.
     rem_buckets_total: Rb,
 
     /// Fast %s when there is only a single part.
+    // NOTE: This must be odd to ensure all seed bits are used!
     rem_slots: RemSlots,
 
     // Computed state.
@@ -570,14 +572,23 @@ impl<
 
         let keys_per_part = n / parts;
         let parts_per_shard = parts / shards;
-        let mut slots_per_part = (keys_per_part as f64 / params.alpha) as usize;
-        // Avoid powers of two, since then %S does not depend on all bits.
-        if slots_per_part.is_power_of_two() {
+        let mut slots_per_part = (keys_per_part as f64 / params.alpha).ceil() as usize;
+        // Avoid even sizes, since then %S does not depend on all bits.
+        // Even non-power-of-2 is not fine, because we mix in hashes by xor'in, and all
+        // bottom bits would then be permuted the same.
+        // Then, it can happen that a subset > SLOTS/2 keys always maps to 'even' slots.
+        while n > 0 && (slots_per_part % 2 == 0 || slots_per_part % 3 == 0) {
             slots_per_part += 1;
         }
         let slots_total = parts * slots_per_part;
-        // Add a few extra buckets to avoid collisions for small n.
-        let buckets_per_part = (keys_per_part as f64 / params.lambda).ceil() as usize + 3;
+
+        // Avoid odd #buckets, so that the hash->bucket reduction can be mixed by xor'ing.
+        // Otherwise, the high bit determines whether the key goes into a even or odd bucket.
+        // Also add a few 'free' buckets to compensate for the very skew bucket functions.
+        let mut buckets_per_part = (keys_per_part as f64 / params.lambda).ceil() as usize + 8;
+        while buckets_per_part % 2 == 0 {
+            buckets_per_part += 1;
+        }
         let buckets_total = parts * buckets_per_part;
 
         trace!("        keys: {n:>10}");
@@ -747,7 +758,8 @@ impl<
             v.push(i as u64);
         }
         while v.len() < remap_slots {
-            v.push(self.n as u64 - 1);
+            // Empty tables can still have a padding slot; no key uses its remap.
+            v.push((self.n as u64).saturating_sub(1));
         }
         assert_eq!(v.len(), remap_slots);
         self.remap = MutPacked::try_new(v).ok_or(())?;

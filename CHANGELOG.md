@@ -3,9 +3,12 @@
 <!-- next-header -->
 
 ## git
+Make builds for small `n` more reliable:
+- More tests
+- #buckets/part is odd, #slots/part is odd (both for better bit-mixing in `Reduce`)
 
 ## 2.1.4
-- Avoid divide-by-zeo panic in `PtrHash::default()`.
+- Avoid divide-by-zero panic in `PtrHash::default()`.
 
 ## 2.1.3
 
