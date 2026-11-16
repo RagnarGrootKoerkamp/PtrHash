@@ -295,6 +295,11 @@ fn ptr_hash_can_clone() {
 }
 
 #[test]
+fn default_builds_successfully() {
+    let _ = PtrHash::<u8>::default();
+}
+
+#[test]
 fn integer_key_types() {
     let h = PtrHash::<_>::new(&[0u8], PtrHashParams::default());
     h.index(&0u8);
