@@ -5,6 +5,7 @@
 ## git
 
 ## 2.1.4
+- Avoid divide-by-zeo panic in `PtrHash::default()`.
 
 ## 2.1.3
 
