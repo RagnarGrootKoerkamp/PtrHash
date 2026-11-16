@@ -1,7 +1,6 @@
 use super::*;
 use crate::{bucket_idx::BucketIdx, stats::BucketStats};
 use bitvec::{slice::BitSlice, vec::BitVec};
-use log::warn;
 #[cfg(feature = "rayon")]
 use rayon::prelude::*;
 use std::{
@@ -134,6 +133,7 @@ impl<
         };
 
         let mut recent = [BucketIdx::NONE; 16];
+        let recent = &mut recent[..(pilots.len() / 4).min(16)];
         let mut total_evictions = 0;
 
         let mut rng = fastrand::Rng::new();
@@ -153,7 +153,9 @@ impl<
             stack.push((new_b_len, new_b));
             recent.fill(BucketIdx::NONE);
             let mut recent_idx = 0;
-            recent[0] = new_b;
+            if recent.len() > 0 {
+                recent[recent_idx] = new_b;
+            }
 
             'b: while let Some((_b_len, b)) = stack.pop() {
                 if evictions > self.slots && evictions.is_power_of_two() {
@@ -172,7 +174,7 @@ impl<
                     //     );
                     // }
                     if evictions >= 10 * self.slots {
-                        warn!(
+                        debug!(
                             "\
 Too many evictions. Aborting!
 When the current bucket has size >=2, try decreasing lambda to use fewer elements per buckets.
@@ -222,6 +224,8 @@ Eviction chain length: {evictions:>9}
                 let p0 = rng.u8(..) as u64;
                 // (worst colliding bucket size, p)
                 let mut best = (usize::MAX, u64::MAX);
+                let mut recent_collisions = 0;
+                let mut duplicate_slot_collisions = 0;
 
                 'p: for delta in 0u64..kmax {
                     // HOT: This code is slow and full of branch-misses.
@@ -236,6 +240,7 @@ Eviction chain length: {evictions:>9}
                         let new_score = if s.is_none() {
                             continue;
                         } else if recent.contains(&s) {
+                            recent_collisions += 1;
                             continue 'p;
                         } else {
                             // HOT: cache misses.
@@ -257,6 +262,8 @@ Eviction chain length: {evictions:>9}
                         if collision_score == new_b_len * new_b_len {
                             break;
                         }
+                    } else {
+                        duplicate_slot_collisions += 1;
                     }
                 }
 
@@ -264,15 +271,13 @@ Eviction chain length: {evictions:>9}
                     let slots = b_slots(0);
                     let len = bucket.len();
                     let num_slots = self.slots;
-                    eprintln!(
-                        "part {part}: bucket of size {len} with {num_slots} slots: Indistinguishable hashes in bucket!"
+                    debug!(
+                        "part {part} with {} buckets: stopped placement after {evictions} evictions [{recent_collisions} recent collisions; {duplicate_slot_collisions} self-collisions]: bucket of size {len} with {num_slots} slots: Indistinguishable hashes in bucket or endless eviction!",
+                        pilots.len()
                     );
                     for (hx, slot) in zip(bucket, slots) {
-                        eprintln!("{:x?} -> slot {slot}", hx);
+                        trace!("{:x?} -> slot {slot}", hx);
                     }
-                    eprintln!(
-                        "part {part}: bucket of size {len} with {num_slots} slots: Indistinguishable hashes in bucket!"
-                    );
                     return None;
                 }
 
@@ -319,9 +324,11 @@ Eviction chain length: {evictions:>9}
                     }
                 }
 
-                recent_idx += 1;
-                recent_idx %= recent.len();
-                recent[recent_idx] = b;
+                if recent.len() > 0 {
+                    recent_idx += 1;
+                    recent_idx %= recent.len();
+                    recent[recent_idx] = b;
+                }
             }
             total_evictions += evictions;
             // if self.params.print_stats {
