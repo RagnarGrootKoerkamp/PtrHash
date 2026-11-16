@@ -488,7 +488,7 @@ impl<
     /// Use `<PtrHash>::new()` or `DefaultPtrHash::new()` instead of simply `PtrHash::new()` to
     /// get the default values for the generics.
     ///
-    /// NOTE: This panics when construction fails after 10 attempts.
+    /// NOTE: This panics when construction fails.
     /// This should be rare, but can happen if we are unlucky with the rng seeds.
     /// Consider calling [`PtrHash::try_new()`] instead.
     ///
@@ -497,7 +497,7 @@ impl<
         let mut ptr_hash = Self::init(keys.len(), params);
         ptr_hash
             .compute_pilots(key_iter(keys))
-            .expect("Unable to construct PtrHash after 10 tries. Try using a better hash or decreasing lambda.");
+            .expect("Unable to construct PtrHash. Try using a better hash or decreasing lambda.");
         ptr_hash
     }
 
@@ -507,7 +507,7 @@ impl<
         let mut ptr_hash = Self::init(keys.len(), params);
         let stats = ptr_hash
             .compute_pilots(key_iter(keys))
-            .expect("Unable to construct PtrHash after 10 tries. Try using a better hash or decreasing lambda.");
+            .expect("Unable to construct PtrHash. Try using a better hash or decreasing lambda.");
         (ptr_hash, stats)
     }
 
@@ -645,7 +645,7 @@ impl<
         // In debug mode, we're more strict.
         #[cfg(debug_assertions)]
         {
-            max_tries = 3;
+            max_tries = 5;
         }
 
         let mut rng = ChaCha8Rng::seed_from_u64(31415);
