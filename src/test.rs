@@ -1,7 +1,12 @@
-use std::hint::black_box;
+use std::{hint::black_box, sync::LazyLock};
 
 use super::*;
 use crate::util::generate_keys;
+
+/// init env_logger
+static ENV_LOGGER: LazyLock<()> = LazyLock::new(|| {
+    env_logger::init();
+});
 
 /// Construct the MPHF and test all keys are mapped to unique indices.
 #[test]
@@ -11,7 +16,7 @@ fn construct_random() {
     #[cfg(not(debug_assertions))]
     ns.extend_from_slice(&[1_000_000, 3_000_000, 10_000_000, 20_000_000, 30_000_000]);
 
-    env_logger::init();
+    *ENV_LOGGER;
 
     for n in (0..=100).chain(ns) {
         #[cfg(debug_assertions)]
@@ -62,7 +67,7 @@ fn construct_random() {
 #[test]
 #[ignore = "large"]
 fn test_1e9() {
-    env_logger::init();
+    *ENV_LOGGER;
     let n = 1_000_000_000;
     eprintln!("RANDOM Testing n = {}", n);
     let keys = generate_keys(n);
@@ -130,7 +135,7 @@ fn int_hash_speed() {
 /// Keys are multiples of 1, 2^40, and 10^12
 #[test]
 fn construct_multiples() {
-    env_logger::init();
+    *ENV_LOGGER;
     for m in [1, 1 << 40, 1_000_000_000_000, 3u64.pow(23)] {
         #[allow(unused_mut)]
         let mut ns = vec![
