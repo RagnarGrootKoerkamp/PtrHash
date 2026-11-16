@@ -460,7 +460,7 @@ where
             rem_parts: FastReduce::new(0),
             rem_buckets: FastReduce::new(0),
             rem_buckets_total: FastReduce::new(0),
-            rem_slots: RemSlots::new(0),
+            rem_slots: RemSlots::new(1),
             seed: 0,
             pilots: vec![],
             remap: F::default(),
