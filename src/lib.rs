@@ -180,6 +180,7 @@ use itertools::Itertools;
 use itertools::izip;
 use log::debug;
 use log::trace;
+use log::warn;
 use mem_dbg::MemSize;
 use pack::MutPacked;
 use rand::{RngExt, SeedableRng};
@@ -639,7 +640,13 @@ impl<
 
         let mut tries = 0;
         // Give more tries for small n, where collisions are more likely.
-        let max_tries: usize = if self.n < 100 { 100 } else { 10 };
+        #[allow(unused_assignments, unused_mut)]
+        let mut max_tries: usize = if self.n < 100 { 100 } else { 10 };
+        // In debug mode, we're more strict.
+        #[cfg(debug_assertions)]
+        {
+            max_tries = 3;
+        }
 
         let mut rng = ChaCha8Rng::seed_from_u64(31415);
 
@@ -648,6 +655,14 @@ impl<
             tries += 1;
             if tries > max_tries {
                 log::error!("PtrHash failed to find a global seed after {max_tries} tries.");
+                trace!("Hashes for the last failed seed {:#018x}:", self.seed);
+                let hashes: Vec<_> = keys
+                    .clone()
+                    .map(|key| self.hash_key(key.borrow()))
+                    .collect();
+                for hash in hashes {
+                    trace!("{:>064b}", hash.low());
+                }
                 return None;
             }
 
@@ -658,8 +673,8 @@ impl<
             if tries == 1 {
                 log::trace!("First seed tried: {}", self.seed);
             } else {
-                log::warn!("Previous seed {old_seed} failed.");
-                log::warn!("Trying seed number {tries}: {}.", self.seed);
+                log::debug!("Previous seed {old_seed} failed.");
+                log::debug!("Trying seed number {tries}: {}.", self.seed);
             }
 
             // Reset output-memory.
@@ -699,7 +714,9 @@ impl<
                     stats.merge(shard_stats);
                     log_duration("find pilots", start);
                 } else {
-                    trace!("Could not find pilots");
+                    if tries > 2 {
+                        warn!("Could not find pilots for try {tries}");
+                    }
                     continue 's;
                 }
             }
