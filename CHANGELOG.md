@@ -3,6 +3,8 @@
 <!-- next-header -->
 
 ## git
+
+## 2.1.5
 Make builds for small `n` more reliable:
 - More tests
 - #buckets/part is odd, #slots/part is odd (both for better bit-mixing in `Reduce`)
