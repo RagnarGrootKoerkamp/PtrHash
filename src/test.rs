@@ -11,30 +11,49 @@ fn construct_random() {
     #[cfg(not(debug_assertions))]
     ns.extend_from_slice(&[1_000_000, 3_000_000, 10_000_000, 20_000_000, 30_000_000]);
 
-    for n in (0..=10).chain(ns) {
-        eprintln!("RANDOM Testing n = {}", n);
-        let keys = generate_keys(n);
-        let ptr_hash = DefaultPtrHash::<FastIntHash, _>::new(&keys, PtrHashParams::default_fast());
-        let mut done = bitvec![0; n];
-        for key in &keys {
-            let idx = ptr_hash.index(&key);
-            assert!(!done[idx]);
-            done.set(idx, true);
-        }
-        let ptr_hash = FastPtrHash::<FastIntHash, _>::new(&keys, PtrHashParams::default_fast());
-        let mut done = bitvec![0; ptr_hash.max_index()];
-        for key in &keys {
-            let idx = ptr_hash.index(key);
-            assert!(!done[idx]);
-            done.set(idx, true);
-        }
-        let ptr_hash =
-            CompactPtrHash::<FastIntHash, _>::new(&keys, PtrHashParams::default_compact());
-        let mut done = bitvec![0; n];
-        for key in &keys {
-            let idx = ptr_hash.index(key);
-            assert!(!done[idx]);
-            done.set(idx, true);
+    env_logger::init();
+
+    for n in (0..=100).chain(ns) {
+        #[cfg(debug_assertions)]
+        let its = match n {
+            0..100 => 200,
+            100..10000 => 10,
+            10000..100_000 => 4,
+            _ => 2,
+        };
+        #[cfg(not(debug_assertions))]
+        let its = match n {
+            0..100 => 10000,
+            100..10000 => 100,
+            10000..100_000 => 10,
+            _ => 3,
+        };
+        for it in 0..its {
+            eprintln!("RANDOM Testing n = {}, it {it}", n);
+            let keys = generate_keys(n);
+            let ptr_hash =
+                DefaultPtrHash::<FastIntHash, _>::new(&keys, PtrHashParams::default_fast());
+            let mut done = bitvec![0; n];
+            for key in &keys {
+                let idx = ptr_hash.index(&key);
+                assert!(!done[idx]);
+                done.set(idx, true);
+            }
+            let ptr_hash = FastPtrHash::<FastIntHash, _>::new(&keys, PtrHashParams::default_fast());
+            let mut done = bitvec![0; ptr_hash.max_index()];
+            for key in &keys {
+                let idx = ptr_hash.index(key);
+                assert!(!done[idx]);
+                done.set(idx, true);
+            }
+            let ptr_hash =
+                CompactPtrHash::<FastIntHash, _>::new(&keys, PtrHashParams::default_compact());
+            let mut done = bitvec![0; n];
+            for key in &keys {
+                let idx = ptr_hash.index(key);
+                assert!(!done[idx]);
+                done.set(idx, true);
+            }
         }
     }
 }
